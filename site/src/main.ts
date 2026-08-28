@@ -91,7 +91,7 @@ function landing(): Page {
             <div class="terminal-key" aria-label="Terminal demo summary">
               <span><b>3</b> shell steps included</span>
               <span><b>1</b> publish step blocked</span>
-              <span><b>1</b> secret input anonymized</span>
+              <span><b>1</b> anonymous input</span>
             </div>
           </div>
         </section>
@@ -190,7 +190,7 @@ function demo(): Page {
             <dl class="result-list">
               <div><dt>Shell steps</dt><dd>3 included</dd></div>
               <div><dt>Release steps</dt><dd>1 blocked</dd></div>
-              <div><dt>Secret inputs</dt><dd>1 anonymous</dd></div>
+              <div><dt>Anonymous inputs</dt><dd>1</dd></div>
               <div><dt>Network</dt><dd>registry.npmjs.org</dd></div>
             </dl>
             <h3>Packet files</h3>

@@ -124,6 +124,22 @@ test("@claim:cli-demo-isolation keeps the caller directory unchanged and matches
   expect(existsSync(join(report.packet_path, "report.md"))).toBe(true);
 });
 
+test("public CLI and demo copy use the documented terms", () => {
+  const help = execFileSync(binary, ["drill", "--help"], { encoding: "utf8" });
+  const { output } = runPacket();
+  const publicCopy = [
+    help,
+    readFileSync(join(output, "report.md"), "utf8"),
+    readFileSync(join(process.cwd(), "site/src/main.ts"), "utf8"),
+    readFileSync(join(process.cwd(), "site/public/terminal-demo.svg"), "utf8"),
+    readFileSync(join(process.cwd(), ".factory/demo.md"), "utf8"),
+    readFileSync(join(process.cwd(), ".factory/claims.json"), "utf8")
+  ].join("\n");
+  expect(publicCopy).toContain("Job name inside the workflow");
+  expect(publicCopy).toContain("GitHub-only actions");
+  expect(publicCopy).not.toMatch(/job key|secret inputs?|provider-only action/i);
+});
+
 test("@claim:no-ci-mutation leaves the source repository unchanged", () => {
   const root = mkdtempSync(join(tmpdir(), "cifail-no-mutation-"));
   cpSync(sample, join(root, "repo"), { recursive: true });
