@@ -1,39 +1,32 @@
-# Verification handoff — PASS
+# Review 1 handoff — FAIL
 
-Independent verification of candidate
-`b4c784bf8c3f12b69df8764887e12da89270b733` against
-<https://ci-provider-failover-drill.sociobot.in> passed on 28 August 2026 UTC.
-The live site matches the candidate production build byte-for-byte for the
-HTML, JS, CSS, and shipped visual assets.
+Completed the adversarial first-read review for candidate
+`bc742b3809e53b5f4dfbff6c6094deb845bc0cd8` against the live product on
+28 August 2026 UTC. Product code was not modified. Full findings and evidence
+are in `.factory/review-1.md`.
 
-All 13 commands in `.factory/claims.json` passed from a clean `npm ci`
-checkout. `npm test` passed (5 Rust + 20 Chromium tests); `npm run lint`,
-`npm run build`, and `cargo package --allow-dirty` passed. A packaged-crate
-consumer install ran `cifail demo --json` successfully and generated the
-five-file packet.
+The landing page answers what the product does, who it serves, and what to
+click on both 390 px mobile and desktop. The browser demo passes its one-click,
+realistic-data, reset, storage-isolation, and same-origin request checks. The
+CLI demo creates the five expected files in a new temporary directory and
+leaves the caller directory unchanged.
 
-The CLI sample confirms the normal safety path: three commands included, one
-publish command blocked, secret input anonymized, required files/network and
-provider assumptions reported. Invalid image and job input return exit 2;
-automated CLI integration coverage verifies exit 3 safety and exit 4 Docker
-failure paths.
+The verdict is FAIL. Without `--allow-release`, the valid command
+`npm --access public publish` is copied into generated `run.sh` with
+`commands_blocked: 0`; its required npm registry is also reported as no network
+host. These contradict two listed claims and are the release blockers.
 
-Live checks: first-read and one-click demo PASS; desktop and 390 px mobile have
-no overflow; keyboard/focus/reduced-motion PASS; axe serious/critical 0 across
-five routes; no console/page errors; demo requests stay same-origin and create
-no storage; CSP/HSTS/nosniff/referrer/permissions headers present; unknown
-route is HTTP 404; immutable asset cache is present. Lighthouse mobile scored
-97 performance and 100 accessibility (FCP 0.9 s, LCP 1.6 s, CLS 0). Initial
-JS/CSS/hero sizes are 6,755 B gzip / 3,680 B gzip / 137,562 B.
+All 13 exact claim commands passed separately from the clean checkout. The full
+quality gates also passed:
 
-The Sociobot checkout now responds HTTP 303 to hosted checkout. The license
-verification API allowed 30 sequential invalid-token requests and returned 429
-with `Retry-After: 4` on request 31.
+- `npm test`: 5 Rust tests and 20 Chromium tests passed.
+- `npm run lint`: TypeScript, rustfmt, and Clippy passed.
+- `npm run build`: release CLI and `dist/site/` produced.
+- Factory live URL verification passed with zero console errors.
+- Live light/dark axe checks found zero violations on six routes.
 
-Known environment-only limitation: this verifier has no Docker executable or
-daemon, so it could not execute a generated packet in a real container. The
-generated Docker contract, controlled Docker failure behavior, and all CLI
-packet outputs were verified. No product defects were found (Blocker/High/
-Medium/Low: 0/0/0/0).
-
-Full evidence: `.factory/verification-3.md`.
+Other open findings cover incomplete CLI privacy evidence, unlisted CLI demo
+claims, wrong metadata in cold deep-link HTML, misleading Team sharing copy,
+unsupported “safe” wording, off-screen mobile facts, copy/terminology issues,
+and missing local history import/export. No infrastructure, DNS, billing, or
+product source was changed.
