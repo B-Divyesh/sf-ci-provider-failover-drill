@@ -1,0 +1,198 @@
+{
+  "base": "https://ci-provider-failover-drill.sociobot.in",
+  "checkedAt": "2026-08-28T23:02:10.060Z",
+  "routes": {
+    "/": {
+      "status": 200,
+      "title": "CI Provider Failover Drill — test one job",
+      "lang": "en",
+      "main": 1,
+      "h1": 1,
+      "canonical": "https://ci-provider-failover-drill.sociobot.in/",
+      "description": "Turn one GitHub Actions job into a provider-neutral container drill.",
+      "overflow": false,
+      "consoleErrors": [],
+      "expected404ConsoleSignal": false,
+      "seriousAxeViolations": 0
+    },
+    "/demo": {
+      "status": 200,
+      "title": "Demo — CI Provider Failover Drill",
+      "lang": "en",
+      "main": 1,
+      "h1": 1,
+      "canonical": "https://ci-provider-failover-drill.sociobot.in/demo",
+      "description": "See a sample release-check job become a failover packet.",
+      "overflow": false,
+      "consoleErrors": [],
+      "expected404ConsoleSignal": false,
+      "seriousAxeViolations": 0
+    },
+    "/team": {
+      "status": 200,
+      "title": "Team tools — CI Provider Failover Drill",
+      "lang": "en",
+      "main": 1,
+      "h1": 1,
+      "canonical": "https://ci-provider-failover-drill.sociobot.in/team",
+      "description": "Restore a Team license and keep local drill history.",
+      "overflow": false,
+      "consoleErrors": [],
+      "expected404ConsoleSignal": false,
+      "seriousAxeViolations": 0
+    },
+    "/privacy": {
+      "status": 200,
+      "title": "Privacy — CI Provider Failover Drill",
+      "lang": "en",
+      "main": 1,
+      "h1": 1,
+      "canonical": "https://ci-provider-failover-drill.sociobot.in/privacy",
+      "description": "How CI Provider Failover Drill handles workflows, reports, and licenses.",
+      "overflow": false,
+      "consoleErrors": [],
+      "expected404ConsoleSignal": false,
+      "seriousAxeViolations": 0
+    },
+    "/terms": {
+      "status": 200,
+      "title": "Terms — CI Provider Failover Drill",
+      "lang": "en",
+      "main": 1,
+      "h1": 1,
+      "canonical": "https://ci-provider-failover-drill.sociobot.in/terms",
+      "description": "Terms for the free CLI and one-time Team license.",
+      "overflow": false,
+      "consoleErrors": [],
+      "expected404ConsoleSignal": false,
+      "seriousAxeViolations": 0
+    },
+    "/missing-place": {
+      "status": 404,
+      "title": "Page not found — CI Provider Failover Drill",
+      "lang": "en",
+      "main": 1,
+      "h1": 1,
+      "canonical": "https://ci-provider-failover-drill.sociobot.in/missing-place",
+      "description": "Return to CI Provider Failover Drill.",
+      "overflow": false,
+      "consoleErrors": [],
+      "expected404ConsoleSignal": true,
+      "seriousAxeViolations": 0
+    }
+  },
+  "demo": {
+    "banner": true,
+    "sample": "3 included / 1 blocked / 1 anonymous",
+    "demoKeys": [],
+    "controls": [
+      {
+        "label": "Demo reset",
+        "width": 171,
+        "height": 55.59375
+      },
+      {
+        "label": "View install command",
+        "width": 171,
+        "height": 55.59375
+      }
+    ],
+    "requestOrigins": [
+      "https://ci-provider-failover-drill.sociobot.in"
+    ]
+  },
+  "mobile": {
+    "viewport": "390x844",
+    "firstScreen": {
+      "Try it with sample data": {
+        "x": 20,
+        "y": 553.71875,
+        "width": 350,
+        "height": 53.59375
+      },
+      "Free local drill": {
+        "x": 20,
+        "y": 746.203125,
+        "width": 141.0625,
+        "height": 20.796875
+      },
+      "No secrets stored": {
+        "x": 177.0625,
+        "y": 746.203125,
+        "width": 148.890625,
+        "height": 20.796875
+      },
+      "Release steps stay blocked": {
+        "x": 20,
+        "y": 775,
+        "width": 219.328125,
+        "height": 20.796875
+      }
+    },
+    "overflow": false
+  },
+  "navigation": {
+    "demoFocused": true,
+    "backFocused": true,
+    "backPath": "/"
+  },
+  "links": {
+    "sociobotTerms": 200,
+    "checkout": 303
+  },
+  "errors": [],
+  "rawMetadata": {
+    "/": {
+      "title": true,
+      "canonical": true,
+      "openGraph": true,
+      "twitter": true,
+      "cspHeader": true,
+      "noSniff": true
+    },
+    "/demo": {
+      "title": true,
+      "canonical": true,
+      "openGraph": true,
+      "twitter": true,
+      "cspHeader": true,
+      "noSniff": true
+    },
+    "/team": {
+      "title": true,
+      "canonical": true,
+      "openGraph": true,
+      "twitter": true,
+      "cspHeader": true,
+      "noSniff": true
+    },
+    "/privacy": {
+      "title": true,
+      "canonical": true,
+      "openGraph": true,
+      "twitter": true,
+      "cspHeader": true,
+      "noSniff": true
+    },
+    "/terms": {
+      "title": true,
+      "canonical": true,
+      "openGraph": true,
+      "twitter": true,
+      "cspHeader": true,
+      "noSniff": true
+    },
+    "/missing-place": {
+      "title": true,
+      "canonical": true,
+      "openGraph": true,
+      "twitter": true,
+      "cspHeader": true,
+      "noSniff": true
+    }
+  },
+  "terms": {
+    "replacementScope": true,
+    "futurePromiseAbsent": true
+  }
+}
