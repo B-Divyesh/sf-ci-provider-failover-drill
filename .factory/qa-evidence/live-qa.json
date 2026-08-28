@@ -1,0 +1,350 @@
+{
+  "routes": [
+    {
+      "route": "/",
+      "status": 200,
+      "title": "CI Failover Drill — prove one job runs elsewhere",
+      "lang": "en",
+      "h1": [
+        "Prove your CI escape route."
+      ],
+      "mainCount": 1,
+      "missingAlt": 0,
+      "headings": [
+        "H1:Prove your CI escape route.",
+        "H2:See what the drill catches",
+        "H2:Make the escape route repeatable",
+        "H3:Select one job",
+        "H3:Inspect the packet",
+        "H3:Run it elsewhere",
+        "H2:Run the first drill",
+        "H2:Know what it does not do",
+        "H2:Keep a shared drill record"
+      ],
+      "overflow": {
+        "scrollWidth": 1440,
+        "innerWidth": 1440
+      },
+      "seriousCritical": [],
+      "errors": [],
+      "origins": [
+        "https://ci-provider-failover-drill.sociobot.in"
+      ]
+    },
+    {
+      "route": "/demo",
+      "status": 200,
+      "title": "Demo — CI Provider Failover Drill",
+      "lang": "en",
+      "h1": [
+        "Inspect a safe failover packet."
+      ],
+      "mainCount": 1,
+      "missingAlt": 0,
+      "headings": [
+        "H1:Inspect a safe failover packet.",
+        "H2:The route is ready to inspect",
+        "H3:Packet files",
+        "H2:Run the same sandbox locally"
+      ],
+      "overflow": {
+        "scrollWidth": 1440,
+        "innerWidth": 1440
+      },
+      "seriousCritical": [],
+      "errors": [],
+      "origins": [
+        "https://ci-provider-failover-drill.sociobot.in"
+      ]
+    },
+    {
+      "route": "/team",
+      "status": 200,
+      "title": "Team tools — CI Provider Failover Drill",
+      "lang": "en",
+      "h1": [
+        "Keep drill results in one field log."
+      ],
+      "mainCount": 1,
+      "missingAlt": 0,
+      "headings": [
+        "H1:Keep drill results in one field log.",
+        "H2:Restore Team on this device"
+      ],
+      "overflow": {
+        "scrollWidth": 1440,
+        "innerWidth": 1440
+      },
+      "seriousCritical": [],
+      "errors": [],
+      "origins": [
+        "https://ci-provider-failover-drill.sociobot.in"
+      ]
+    },
+    {
+      "route": "/privacy",
+      "status": 200,
+      "title": "Privacy — CI Provider Failover Drill",
+      "lang": "en",
+      "h1": [
+        "Your workflow stays on your machine."
+      ],
+      "mainCount": 1,
+      "missingAlt": 0,
+      "headings": [
+        "H1:Your workflow stays on your machine.",
+        "H2:Demo data",
+        "H2:Team data",
+        "H2:License checks",
+        "H2:Contact"
+      ],
+      "overflow": {
+        "scrollWidth": 1440,
+        "innerWidth": 1440
+      },
+      "seriousCritical": [],
+      "errors": [],
+      "origins": [
+        "https://ci-provider-failover-drill.sociobot.in"
+      ]
+    },
+    {
+      "route": "/terms",
+      "status": 200,
+      "title": "Terms — CI Provider Failover Drill",
+      "lang": "en",
+      "h1": [
+        "Use the drill before an outage."
+      ],
+      "mainCount": 1,
+      "missingAlt": 0,
+      "headings": [
+        "H1:Use the drill before an outage.",
+        "H2:Release safety",
+        "H2:Team purchase",
+        "H2:Service limits",
+        "H2:Contact"
+      ],
+      "overflow": {
+        "scrollWidth": 1440,
+        "innerWidth": 1440
+      },
+      "seriousCritical": [],
+      "errors": [],
+      "origins": [
+        "https://ci-provider-failover-drill.sociobot.in"
+      ]
+    },
+    {
+      "route": "/missing-place",
+      "status": 200,
+      "title": "Page not found — CI Provider Failover Drill",
+      "lang": "en",
+      "h1": [
+        "This route is not on the map."
+      ],
+      "mainCount": 1,
+      "missingAlt": 0,
+      "headings": [
+        "H1:This route is not on the map."
+      ],
+      "overflow": {
+        "scrollWidth": 1440,
+        "innerWidth": 1440
+      },
+      "seriousCritical": [],
+      "errors": [],
+      "origins": [
+        "https://ci-provider-failover-drill.sociobot.in"
+      ]
+    }
+  ],
+  "keyboard": {
+    "focusSequence": [
+      {
+        "tag": "A",
+        "text": "Skip to main content",
+        "href": "#main",
+        "outline": "3px solid rgb(13, 102, 112)"
+      },
+      {
+        "tag": "A",
+        "text": "CI / FAILOVER",
+        "href": "/",
+        "outline": "3px solid rgb(13, 102, 112)"
+      },
+      {
+        "tag": "A",
+        "text": "Demo",
+        "href": "/demo",
+        "outline": "3px solid rgb(13, 102, 112)"
+      },
+      {
+        "tag": "A",
+        "text": "Install",
+        "href": "/#install",
+        "outline": "3px solid rgb(13, 102, 112)"
+      },
+      {
+        "tag": "A",
+        "text": "Team",
+        "href": "/team",
+        "outline": "3px solid rgb(13, 102, 112)"
+      },
+      {
+        "tag": "A",
+        "text": "Privacy",
+        "href": "/privacy",
+        "outline": "3px solid rgb(13, 102, 112)"
+      },
+      {
+        "tag": "A",
+        "text": "Try it with sample data",
+        "href": "/demo",
+        "outline": "3px solid rgb(13, 102, 112)"
+      },
+      {
+        "tag": "CODE",
+        "text": "cargo install --git https://github.com/B-Divyesh/sf-ci-provider-failover-drill cifail",
+        "href": null,
+        "outline": "3px solid rgb(13, 102, 112)"
+      },
+      {
+        "tag": "BUTTON",
+        "text": "Copy install command",
+        "href": null,
+        "outline": "3px solid rgb(13, 102, 112)"
+      },
+      {
+        "tag": "PRE",
+        "text": "cifail drill \\ --workflow .github/workflows/release.yml \\ --job release-check \\ --image 'node:22-bookworm@sha256:<digest>'",
+        "href": null,
+        "outline": "3px solid rgb(13, 102, 112)"
+      }
+    ],
+    "actionBeforeEnter": "Try it with sample data",
+    "afterEnterUrl": "https://ci-provider-failover-drill.sociobot.in/demo",
+    "focusedAfterRoute": {
+      "tag": "H1",
+      "text": "Inspect a safe failover packet."
+    },
+    "afterBack": {
+      "url": "https://ci-provider-failover-drill.sociobot.in/",
+      "focus": {
+        "tag": "H1",
+        "text": "Prove your CI escape route."
+      }
+    }
+  },
+  "mobile": {
+    "overflow": {
+      "scrollWidth": 390,
+      "innerWidth": 390
+    },
+    "firstScreen": [
+      "Skip to main content",
+      "Demo",
+      "Install",
+      "Team",
+      "Privacy",
+      "OUTAGE ROUTE / FIELD CHECK 01",
+      "Prove your CI escape route.",
+      "For GitHub Actions maintainers who need one critical job to run during an outage.",
+      "Try it with sample data",
+      "See a safe release-check packet in one click.",
+      "Free local drill",
+      "No secrets stored",
+      "Release steps stay blocked",
+      "SELECTED JOB → PINNED RUNNER → DRILL REPORT",
+      "PLATE 02",
+      "KNOWN ROUTE",
+      "THE PRODUCT",
+      "See what the drill catches",
+      "One command reads one job. It produces a packet for Docker on another runner.",
+      "3 shell steps included",
+      "1 publish step blocked",
+      "1 secret input anonymized",
+      "ROUTE 03",
+      "THREE LEGS",
+      "HOW IT WORKS",
+      "Make the escape route repeatable",
+      "01",
+      "Select one job",
+      "Point the CLI at a workflow and job key.",
+      "02"
+    ],
+    "sub44Targets": [
+      {
+        "name": "CI / FAILOVER",
+        "width": 36,
+        "height": 36
+      },
+      {
+        "name": "Demo",
+        "width": 32.9,
+        "height": 44
+      },
+      {
+        "name": "Team",
+        "width": 32.9,
+        "height": 44
+      },
+      {
+        "name": "Restore a license",
+        "width": 163.8,
+        "height": 25.6
+      },
+      {
+        "name": "Privacy",
+        "width": 54.8,
+        "height": 20.8
+      },
+      {
+        "name": "Terms",
+        "width": 39.1,
+        "height": 20.8
+      }
+    ],
+    "demoOverflow": {
+      "scrollWidth": 563,
+      "innerWidth": 390
+    },
+    "darkSeriousCritical": [
+      {
+        "id": "color-contrast",
+        "impact": "serious",
+        "nodes": 2
+      }
+    ]
+  },
+  "reducedMotion": {
+    "matches": true,
+    "scrollBehavior": "auto",
+    "path": {
+      "duration": "1e-05s",
+      "dashOffset": "0px"
+    },
+    "circle": {
+      "duration": "1e-05s",
+      "opacity": "0",
+      "transform": "matrix(0.4, 0, 0, 0.4, 0, 0)"
+    }
+  },
+  "team": {
+    "emptyRequired": {
+      "valueMissing": true,
+      "validationMessage": "Please fill out this field."
+    },
+    "invalid": {
+      "requests": 1,
+      "notice": "This license is no longer active. Check the token or buy Team.",
+      "storedToken": null
+    },
+    "cachedInvalidRecovery": {
+      "requests": 0,
+      "hasTools": 0,
+      "stillHasForm": 1,
+      "storedToken": "new-valid-token"
+    }
+  }
+}

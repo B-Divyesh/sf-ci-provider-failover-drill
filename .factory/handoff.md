@@ -1,74 +1,59 @@
-# Handoff\n\n(written by the worker at the end of each work order)
-# CI Provider Failover Drill v0.1 handoff
+# Handoff
 
-## What was built
+## Independent verification verdict: FAIL
 
-- Rust `cifail` single binary with `drill`, `demo`, `--json`, useful help, and
-  documented exit behavior.
-- Selection and validation of one GitHub Actions job.
-- A pinned `Dockerfile`, translated `run.sh`, anonymous `.env.example`,
-  machine-readable `drill.json`, and human `report.md`.
-- Required-file checks, network-host inventory, provider-action assumptions,
-  job-context warnings, and optional Docker execution.
-- Default blocking for publish, push, release, deploy, and apply commands.
-- Secret-expression replacement with anonymous inputs. Generated packet files
-  do not include the workflow's secret names or values.
-- A bundled Node release-check repository and isolated `cifail demo` flow.
-- A Vite site with `/`, `/demo`, `/team`, `/privacy`, `/terms`, and styled 404
-  routes. History navigation, route focus, and live announcements are wired.
-- One-time $49 Team checkout and restore flow through Sociobot. License results
-  cache for one day. Team report history stays in local storage.
-- Original topographic hero art, optimized to a 135 KB WebP. Full generation
-  provenance is in `.factory/assets/topographic-route.json`.
-- Claim registry, copy audit, demo contract, responsive design, security
-  headers, sitemap, robots file, social card, and favicons.
+Candidate `2dad960afc6520e5728ea4bf4670722684941bfe` was verified on
+28 August 2026 against
+<https://ci-provider-failover-drill.sociobot.in>. The live HTML, JavaScript,
+and CSS byte-match the candidate build, so this is not a deployment-only false
+negative.
 
-## Run and verify
+Release blockers:
 
-```sh
-npm install
-npm test
-npm run build
-cargo run -- demo
-cargo package --allow-dirty
-```
+- All nine exact `.factory/claims.json` commands fail from a clean checkout
+  because `test:claims` previews a site that has not been built.
+- The visible $49 Team checkout endpoint returns HTTP 404.
+- `/demo` is 563 px wide in a 390 px viewport.
+- Dark mode makes the install section heading effectively invisible and produces
+  a serious axe contrast violation.
+- Several public README/site promises have no registered observable claim test.
 
-`npm run build` creates the release binary under `target/release/` and the
-deployable site at `dist/site/`. The static root contains `index.html`.
+Additional defects:
 
-Verification completed on 28 August 2026:
+- A replacement Team token is not verified for 24 hours after an invalid token.
+- A missing CLI job can exit 3 instead of the documented input-error code 2.
+- Unknown routes show not-found content with HTTP 200.
+- Strict TypeScript checking fails at `site/src/main.ts:383`.
+- Several mobile controls are smaller than 44×44 CSS px.
+- Hashed assets use `max-age=30` instead of immutable caching.
 
-- `cargo test --locked`: 4 passed, including clean `demo --json` output.
-- Playwright claim, route, mobile, and accessibility suite: 11 passed.
-- Axe serious and critical findings: 0 across all six route states.
-- Factory `verify-url.sh`: HTTP 200, one h1, `lang=en`, main landmark, complete
-  image alt text, no browser console errors. Local measured load: 550 ms.
-- Lighthouse mobile: Performance 99, Accessibility 100, Best Practices 100,
-  SEO 100. LCP 2.0 s, CLS 0, total blocking time 0 ms.
-- Initial JavaScript: 19.99 KB raw / 6.68 KB gzip.
-- CSS: 11.99 KB raw / 3.60 KB gzip.
-- Hero: 135 KB WebP. Full deploy output: 336 KB.
-- Publishable crate: 15 files / 14.8 KB compressed; package verification passed.
-- `npm audit`: 0 vulnerabilities after updating Vite to 7.3.6.
-- Desktop and 390×844 mobile screenshots were inspected.
+Passing evidence:
 
-## Known gaps
+- The cold first screen clearly states the job, user, and one-click sample action.
+- `npm ci`, `npm test` (4 Rust and 11 Playwright tests), `npm run build`, Cargo
+  formatting, Clippy with warnings denied, package verification, and npm audit
+  pass.
+- The packaged crate and the exact Git install command both install `cifail
+  0.1.0`; the Git install resolves to `2dad960a`.
+- Normal packet generation, secret redaction, release blocking/opt-in, JSON,
+  invalid inputs, and simulated Docker success/failure were exercised.
+- Light-mode route scans have no serious/critical axe results or console errors.
+- The demo sends requests only to its own origin. License verification sends the
+  token only to the Sociobot API and uses `no-store`.
+- The verify endpoint allowed 30 sequential requests, then returned 429 with
+  `Retry-After: 4`.
+- Lighthouse mobile scored 98/100/100/100 with LCP 1.6 s and CLS 0. JS, CSS,
+  and hero assets are within budget.
 
-- The CLI translates shell steps. It reports provider actions as assumptions
-  instead of trying to reproduce arbitrary marketplace action code.
-- Docker is absent in the factory container, so `--execute` error handling is
-  implemented but the container run was not exercised here.
-- Expression contexts outside `secrets.*` become anonymous context variables.
-  An operator must fill them before execution.
-- Scheduled drills are not included in v1. Team provides local history and an
-  organization report template; scheduling still needs an organization runner.
-- Release execution is intentionally possible only with `--allow-release`.
-  Operators should use a disposable registry or test target.
+Full commands, measurements, and severity details are in
+[verification.md](verification.md). Product code was not modified.
 
-## Next steps
+## Required next steps
 
-1. Register the product and return URL with the Sociobot billing factory.
-2. Publish release binaries after factory signing and registry approval.
-3. Pilot against varied release jobs and add translators only for repeated
-   provider-action patterns.
-4. Exercise `--execute` in CI with Docker and a disposable package registry.
+1. Fix the claim runner so each listed command works from a clean clone.
+2. Enable and test the Sociobot checkout product.
+3. Repair mobile demo sizing and dark-mode contrast.
+4. Fix license retry state, CLI exit classification, 404 status, touch targets,
+   caching, and TypeScript checking.
+5. Add registered tests for every remaining public claim, then repeat independent
+   verification with a real Docker daemon.
