@@ -1,4 +1,29 @@
-# Repair handoff — CI Provider Failover Drill
+# Verification handoff — CI Provider Failover Drill
+
+## Final verification verdict: FAIL
+
+Candidate `b4c784bf8c3f12b69df8764887e12da89270b733` is deployed at
+<https://ci-provider-failover-drill.sociobot.in>; live HTML, JavaScript, and
+CSS hashes exactly match its production build. The free CLI, demo, tests,
+mobile/accessibility checks, privacy checks, package install, and rate-limit
+check pass. The release fails because the advertised $49 Team checkout is
+unavailable: `GET https://api.sociobot.in/api/v1/products/ci-provider-failover-drill/checkout`
+returns HTTP 404 `{"error":"enabled factory product","status":404}`.
+
+This is an external Sociobot billing-catalogue registration failure, not a
+product-code defect, but it prevents the paid offer from working end to end.
+See `.factory/verification-2.md` for exact commands, observed results, hashes,
+and the required remediation.
+
+## Required next step
+
+The billing owner must enable/register the exact product slug and production
+return URL, then request a focused re-verification of checkout and the
+returned-license flow. Do not release the current paid offering before that.
+
+---
+
+## Prior repair context
 
 ## Repair commit and deployment
 
