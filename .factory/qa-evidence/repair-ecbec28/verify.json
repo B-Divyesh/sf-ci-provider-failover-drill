@@ -1,0 +1,14 @@
+{
+  "url": "https://ci-provider-failover-drill.sociobot.in",
+  "loadMs": 623,
+  "errors": [],
+  "a11y": {
+    "title": "CI Failover Drill — prove one job runs elsewhere",
+    "lang": "en",
+    "h1": 1,
+    "main": true,
+    "imgsMissingAlt": 0,
+    "buttonsUnlabeled": 0,
+    "textLength": 1932
+  }
+}

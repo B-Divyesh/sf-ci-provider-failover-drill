@@ -1,59 +1,86 @@
-# Handoff
+# Repair handoff — CI Provider Failover Drill
 
-## Independent verification verdict: FAIL
+## Repair commit and deployment
 
-Candidate `2dad960afc6520e5728ea4bf4670722684941bfe` was verified on
-28 August 2026 against
-<https://ci-provider-failover-drill.sociobot.in>. The live HTML, JavaScript,
-and CSS byte-match the candidate build, so this is not a deployment-only false
-negative.
+- Repair commit: `ecbec288111c52120f9782fbbb2269ca4c911c3e` (`fix: repair verifier
+  release blockers`), pushed to `main`.
+- Static deployment: production deployment `be0b9095-2b7e-4869-8bc1-04ab64de936f`
+  completed on 28 August 2026. Live URL:
+  <https://ci-provider-failover-drill.sociobot.in>.
 
-Release blockers:
+## What was repaired
 
-- All nine exact `.factory/claims.json` commands fail from a clean checkout
-  because `test:claims` previews a site that has not been built.
-- The visible $49 Team checkout endpoint returns HTTP 404.
-- `/demo` is 563 px wide in a 390 px viewport.
-- Dark mode makes the install section heading effectively invisible and produces
-  a serious axe contrast violation.
-- Several public README/site promises have no registered observable claim test.
+- Claim commands are self-contained: `pretest:claims` builds the debug binary
+  and static site before Playwright starts. All 13 registered commands now work
+  from a clean install.
+- Added four observable claim tests for the runner contract, inspection report,
+  exit-code contract, and one-day token-matched license verdict cache.
+- Replaced message-substring exit classification with typed input, safety, and
+  execution failures. A missing job now exits 2 even when an available job name
+  contains the word "release".
+- License verdicts now include the token they verify. Pasting a replacement
+  token clears the old verdict and immediately verifies the replacement.
+- The demo grid can shrink inside a 390 px viewport. All measured demo
+  links/buttons meet the 44 px target.
+- The install section now uses explicit dark field-map tokens, so dark mode no
+  longer places light text on a light background.
+- Static output contains real entry documents for `/demo`, `/team`, `/privacy`,
+  and `/terms`; no navigation fallback converts unknown addresses to success.
+  `/missing-place` is now a true HTTP 404. Hashed assets receive immutable
+  one-year caching.
+- Added `npm run typecheck` and `npm run lint`; strict TypeScript now passes.
 
-Additional defects:
+## Verification evidence
 
-- A replacement Team token is not verified for 24 hours after an invalid token.
-- A missing CLI job can exit 3 instead of the documented input-error code 2.
-- Unknown routes show not-found content with HTTP 200.
-- Strict TypeScript checking fails at `site/src/main.ts:383`.
-- Several mobile controls are smaller than 44×44 CSS px.
-- Hashed assets use `max-age=30` instead of immutable caching.
+Commands run after moving prior build/dependency directories aside and running
+`npm ci`:
 
-Passing evidence:
+```sh
+npm ci
+npm run build
+npm run test:claims -- --grep @claim:<each registered claim>
+npm test
+npm run lint
+npm audit --audit-level=high
+cargo package --locked --allow-dirty
+```
 
-- The cold first screen clearly states the job, user, and one-click sample action.
-- `npm ci`, `npm test` (4 Rust and 11 Playwright tests), `npm run build`, Cargo
-  formatting, Clippy with warnings denied, package verification, and npm audit
-  pass.
-- The packaged crate and the exact Git install command both install `cifail
-  0.1.0`; the Git install resolves to `2dad960a`.
-- Normal packet generation, secret redaction, release blocking/opt-in, JSON,
-  invalid inputs, and simulated Docker success/failure were exercised.
-- Light-mode route scans have no serious/critical axe results or console errors.
-- The demo sends requests only to its own origin. License verification sends the
-  token only to the Sociobot API and uses `no-store`.
-- The verify endpoint allowed 30 sequential requests, then returned 429 with
-  `Retry-After: 4`.
-- Lighthouse mobile scored 98/100/100/100 with LCP 1.6 s and CLS 0. JS, CSS,
-  and hero assets are within budget.
+- `npm test`: 5 Rust tests and 20 Chromium checks passed.
+- `npm run lint`: strict TypeScript, Rust formatting, and Clippy with warnings
+  denied passed.
+- `npm audit --audit-level=high`: 0 vulnerabilities.
+- `cargo package --locked --allow-dirty`: package verification passed.
+- Production browser checks at 390×844 in both light and dark mode: demo width
+  390/390, zero undersized links/buttons, zero serious/critical axe findings,
+  and zero console errors.
+- Factory URL verification passed: title, `lang=en`, one h1, main landmark,
+  complete image alt text, and no browser errors. Evidence is in
+  `.factory/qa-evidence/repair-ecbec28/`.
+- Live `GET /missing-place` returns 404. The deployed hashed JavaScript returns
+  `Cache-Control: public, max-age=31536000, immutable`.
+- Production budgets: JS 20,100 bytes raw / 6,755 gzip; CSS 12,450 bytes raw /
+  3,680 gzip; hero WebP 137,562 bytes.
 
-Full commands, measurements, and severity details are in
-[verification.md](verification.md). Product code was not modified.
+## Known external blocker
 
-## Required next steps
+The hosted Team checkout cannot be repaired from this repository. The product
+is absent from the Sociobot product catalogue, and both production and pilot
+checkout endpoints return:
 
-1. Fix the claim runner so each listed command works from a clean clone.
-2. Enable and test the Sociobot checkout product.
-3. Repair mobile demo sizing and dark-mode contrast.
-4. Fix license retry state, CLI exit classification, 404 status, touch targets,
-   caching, and TypeScript checking.
-5. Add registered tests for every remaining public claim, then repeat independent
-   verification with a real Docker daemon.
+```text
+404 {"error":"enabled factory product","status":404}
+```
+
+The site continues to use the required Sociobot hosted-checkout and verify
+endpoints; its client-side return, restore, cache, and replacement-token flows
+are covered. The factory billing owner must register/enable
+`ci-provider-failover-drill` with its production return URL before the paid
+offer can be released. No payment provider or billing credential was added to
+this repository.
+
+## Remaining note
+
+The production Lighthouse command started successfully with the Playwright
+Chromium executable but its tab crashed during full-page screenshot capture, so
+it produced no current score. Browser/a11y checks above completed normally; the
+independent candidate report recorded 98 performance and 100 accessibility.
