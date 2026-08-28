@@ -50,6 +50,9 @@ cargo package --locked --allow-dirty
   denied passed.
 - `npm audit --audit-level=high`: 0 vulnerabilities.
 - `cargo package --locked --allow-dirty`: package verification passed.
+- A clean consumer-root install (`cargo install --path . --root <temp> --locked`)
+  installed `cifail 0.1.0`; its `demo --json` returned the ready
+  `release-check` report.
 - Production browser checks at 390×844 in both light and dark mode: demo width
   390/390, zero undersized links/buttons, zero serious/critical axe findings,
   and zero console errors.
@@ -58,6 +61,8 @@ cargo package --locked --allow-dirty
   `.factory/qa-evidence/repair-ecbec28/`.
 - Live `GET /missing-place` returns 404. The deployed hashed JavaScript returns
   `Cache-Control: public, max-age=31536000, immutable`.
+- The deployed `index.html` SHA-256 exactly matches the local production build
+  from repair commit `ecbec2866eadb158647cbd3463c01e074457f2c0`.
 - Production budgets: JS 20,100 bytes raw / 6,755 gzip; CSS 12,450 bytes raw /
   3,680 gzip; hero WebP 137,562 bytes.
 
