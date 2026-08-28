@@ -2,7 +2,7 @@
 
 ## Repair commit and deployment
 
-- Repair commit: `ecbec288111c52120f9782fbbb2269ca4c911c3e` (`fix: repair verifier
+- Repair commit: `ecbec2866eadb158647cbd3463c01e074457f2c0` (`fix: repair verifier
   release blockers`), pushed to `main`.
 - Static deployment: production deployment `be0b9095-2b7e-4869-8bc1-04ab64de936f`
   completed on 28 August 2026. Live URL:
