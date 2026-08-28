@@ -11,6 +11,7 @@ categories = ["command-line-utilities", "development-tools"]
 include = [
   "/src/**",
   "/examples/**",
+  "/tests/*.rs",
   "/Cargo.toml",
   "/Cargo.lock",
   "/README.md",

@@ -126,7 +126,9 @@ fn run() -> Result<()> {
                 allow_release: false,
             })?;
             print_report(&report, json)?;
-            println!("demo     sample data only; nothing was saved to your repository");
+            if !json {
+                println!("demo     sample data only; nothing was saved to your repository");
+            }
             Ok(())
         }
     }

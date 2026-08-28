@@ -38,7 +38,7 @@ deployable site at `dist/site/`. The static root contains `index.html`.
 
 Verification completed on 28 August 2026:
 
-- `cargo test --locked`: 3 passed.
+- `cargo test --locked`: 4 passed, including clean `demo --json` output.
 - Playwright claim, route, mobile, and accessibility suite: 11 passed.
 - Axe serious and critical findings: 0 across all six route states.
 - Factory `verify-url.sh`: HTTP 200, one h1, `lang=en`, main landmark, complete
@@ -48,6 +48,7 @@ Verification completed on 28 August 2026:
 - Initial JavaScript: 19.99 KB raw / 6.68 KB gzip.
 - CSS: 11.99 KB raw / 3.60 KB gzip.
 - Hero: 135 KB WebP. Full deploy output: 336 KB.
+- Publishable crate: 15 files / 14.8 KB compressed; package verification passed.
 - `npm audit`: 0 vulnerabilities after updating Vite to 7.3.6.
 - Desktop and 390×844 mobile screenshots were inspected.
 
