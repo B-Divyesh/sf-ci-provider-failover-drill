@@ -21,7 +21,7 @@ enum Commands {
         /// GitHub Actions workflow YAML file
         #[arg(long)]
         workflow: PathBuf,
-        /// Job key inside the workflow
+        /// Job name inside the workflow
         #[arg(long)]
         job: String,
         /// Container image pinned with @sha256:<digest>

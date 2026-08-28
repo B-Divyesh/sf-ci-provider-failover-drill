@@ -1,4 +1,4 @@
-# Landing copy audit — polish 1
+# Copy audit — polish 2
 
 Audited 28 August 2026 against the rendered `/` route. Counts treat inline
 code and hyphenated terms as one word. No sentence exceeds 22 words. No banned
@@ -33,8 +33,12 @@ First-screen labels and facts are fragments by design:
 | No secrets stored | 3 | — |
 | Release steps stay blocked | 4 | — |
 
-Catalog description: “Prove one GitHub Actions job runs on another runner.” It
-starts with a verb and has 10 words.
+Terms purchase copy: “Team costs $49 as a one-time purchase.” (8 words) “It
+covers the browser tools shown on the Team page.” (9 words) The unbounded
+“future v1 updates” promise was removed.
+
+Catalog description: “Prove one GitHub Actions job runs on another Docker
+runner.” It starts with a verb, has 11 words, and is 59 characters.
 
 ## Terminology
 

@@ -11,7 +11,7 @@
 
 The sample is a Node package with a `release-check` job. It has checkout,
 runtime setup, install, test, registry identity, and publish steps. The result
-shows three shell steps, one blocked publish step, one anonymous secret input,
+shows three shell steps, one blocked publish step, one anonymous input,
 and the five packet files.
 
 ## CLI

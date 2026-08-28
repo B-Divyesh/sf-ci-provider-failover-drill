@@ -140,7 +140,7 @@ impl DrillReport {
             "BLOCKED"
         };
         format!(
-            "{state}  {}\npacket  {}\nsteps   {} included, {} blocked\ninputs  {} anonymous secret input(s)\n",
+            "{state}  {}\npacket  {}\nsteps   {} included, {} blocked\ninputs  {} anonymous input(s)\n",
             self.job,
             self.packet_path,
             self.commands_included,
@@ -592,7 +592,7 @@ fn write_reports(out: &Path, report: &DrillReport, blocked: &[String]) -> Result
         }
     };
     let markdown = format!(
-        "# Failover drill: {}\n\n**Status: {status}**\n\n## Local drill\n\n- Container image: `{}`\n- Commands included: {}\n- Commands blocked: {}\n- Anonymous secret inputs: {}\n- Executed: {}\n\nRun from the repository root:\n\n```sh\ndocker build -t cifail-packet {}\ndocker run --rm --env-file {}/.env.example -v \"$PWD:/workspace\" cifail-packet\n```\n\n## Generic runner contract\n\nAny runner needs Docker, a checkout mounted at `/workspace`, and the anonymous inputs in `.env.example`.\n\n### Required paths\n{}\n### Network hosts\n{}\n### Provider assumptions\n{}\n### Blocked release steps\n{}\n### Warnings\n{}",
+        "# Failover drill: {}\n\n**Status: {status}**\n\n## Local drill\n\n- Container image: `{}`\n- Commands included: {}\n- Commands blocked: {}\n- Anonymous inputs: {}\n- Executed: {}\n\nRun from the repository root:\n\n```sh\ndocker build -t cifail-packet {}\ndocker run --rm --env-file {}/.env.example -v \"$PWD:/workspace\" cifail-packet\n```\n\n## Generic runner contract\n\nAny runner needs Docker, a checkout mounted at `/workspace`, and the anonymous inputs in `.env.example`.\n\n### Required paths\n{}\n### Network hosts\n{}\n### Provider assumptions\n{}\n### Blocked release steps\n{}\n### Warnings\n{}",
         report.job,
         report.image,
         report.commands_included,

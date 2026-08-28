@@ -216,6 +216,9 @@ test("@claim:paid-contract shows the price and free-core boundary", async ({ pag
   await expect(page.locator(".price")).toContainText("one-time purchase");
   await expect(page.getByText("The free CLI keeps packet export and safety checks.")).toBeVisible();
   await expect(page.getByRole("link", { name: /Buy Team for \$49/ })).toHaveAttribute("href", "https://api.sociobot.in/api/v1/products/ci-provider-failover-drill/checkout");
+  await page.goto("/terms");
+  await expect(page.locator("main")).toContainText("Team costs $49 as a one-time purchase. It covers the browser tools shown on the Team page.");
+  await expect(page.getByText(/future v1 updates/i)).toHaveCount(0);
 });
 
 test("@claim:exit-codes assigns input, safety, and execution failures documented codes", () => {

@@ -236,7 +236,7 @@ function terms(): Page {
         <h2>Release safety</h2>
         <p>Release commands stay blocked unless you pass the explicit release flag. Inspect every generated packet before execution.</p>
         <h2>Team purchase</h2>
-        <p>Team costs $49 as a one-time purchase. It covers the current browser tools and future v1 updates.</p>
+        <p>Team costs $49 as a one-time purchase. It covers the browser tools shown on the Team page.</p>
         <p>Payment opens Sociobot checkout. See the <a href="https://sociobot.in/terms">Sociobot terms and refund policy</a>.</p>
         <h2>Service limits</h2>
         <p>The drill reports assumptions but cannot guarantee another provider will stay available. Keep an independent runner and test it regularly.</p>

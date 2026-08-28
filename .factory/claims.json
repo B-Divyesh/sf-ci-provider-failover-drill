@@ -81,7 +81,7 @@
     "claim": "Team costs $49 once while packet export and safety checks remain free.",
     "where": "landing pricing, terms, README",
     "test": "npm run test:claims -- --grep @claim:paid-contract",
-    "sandbox": "fresh browser context; assert price, free boundary, and Sociobot checkout link"
+    "sandbox": "fresh browser context; assert price, current Team-page scope, free boundary, checkout link, and no future-update promise"
   },
   {
     "id": "runner-contract",
@@ -92,7 +92,7 @@
   },
   {
     "id": "inspection-report",
-    "claim": "The CLI checks required files, network needs, and provider-only actions.",
+    "claim": "The CLI checks required files, network needs, and GitHub-only actions.",
     "where": "README",
     "test": "npm run test:claims -- --grep @claim:inspection-report",
     "sandbox": "bundled sample; inspect drill.json and report.md for each category"

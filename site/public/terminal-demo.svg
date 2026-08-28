@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1080" height="580" viewBox="0 0 1080 580" role="img" aria-labelledby="title desc">
   <title id="title">A cifail sample drill in a terminal</title>
-  <desc id="desc">The command reports a ready release-check packet with three steps included, one publish step blocked, and one anonymous secret input.</desc>
+  <desc id="desc">The command reports a ready release-check packet with three steps included, one publish step blocked, and one anonymous input.</desc>
   <rect width="1080" height="580" rx="12" fill="#101815"/>
   <path d="M0 58h1080" stroke="#32423c"/>
   <circle cx="28" cy="29" r="6" fill="#f17a61"/><circle cx="50" cy="29" r="6" fill="#f2c36b"/><circle cx="72" cy="29" r="6" fill="#9fc59c"/>
@@ -9,7 +9,7 @@
     <text x="32" y="158"><tspan fill="#9fc59c">READY</tspan><tspan dx="18">release-check</tspan></text>
     <text x="32" y="204"><tspan fill="#bac7bf">packet</tspan><tspan dx="16">/tmp/cifail-demo-7f31/failover-packet</tspan></text>
     <text x="32" y="250"><tspan fill="#bac7bf">steps</tspan><tspan dx="28">3 included, </tspan><tspan fill="#f2c36b">1 blocked</tspan></text>
-    <text x="32" y="296"><tspan fill="#bac7bf">inputs</tspan><tspan dx="16">1 anonymous secret input</tspan></text>
+    <text x="32" y="296"><tspan fill="#bac7bf">inputs</tspan><tspan dx="16">1 anonymous input</tspan></text>
     <text x="32" y="356" fill="#f2c36b">safety  release commands omitted; inspect report.md</text>
     <text x="32" y="416" fill="#bac7bf">demo    sample data only; nothing was saved to your repository</text>
     <text x="32" y="492" fill="#6fcbd0">$ ls /tmp/cifail-demo-7f31/failover-packet</text>
