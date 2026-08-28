@@ -1,0 +1,37 @@
+[package]
+name = "cifail"
+version = "0.1.0"
+edition = "2024"
+description = "Turn one GitHub Actions job into a provider-neutral failover drill"
+license = "MIT"
+repository = "https://github.com/B-Divyesh/sf-ci-provider-failover-drill"
+readme = "README.md"
+keywords = ["ci", "github-actions", "failover", "devops"]
+categories = ["command-line-utilities", "development-tools"]
+include = [
+  "/src/**",
+  "/examples/**",
+  "/Cargo.toml",
+  "/Cargo.lock",
+  "/README.md",
+  "/LICENSE",
+  "/CHANGELOG.md"
+]
+
+[[bin]]
+name = "cifail"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive"] }
+regex = "1.11"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+sha2 = "0.10"
+tempfile = "3.20"
+
+[dev-dependencies]
+assert_cmd = "2.0"
+predicates = "3.1"
