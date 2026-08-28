@@ -1,0 +1,10 @@
+{
+  "asset": "site/public/topographic-route.webp",
+  "prompt": "Use case: stylized-concept. Asset type: landing-page hero illustration. An abstract topographic field map seen from above on warm ivory survey paper. Dense precise rust-red contour lines form two separated highlands. One teal river-like route crosses the gap through three small survey waypoints. Add a subtle graphite coordinate grid, registration crosses, and restrained screen-print paper texture. Editorial technical illustration, calm and exact, wide landscape composition, full bleed. No words, no letters, no numbers, no logos, no interface, no people, no 3D, no gradients.",
+  "generator": "/opt/fleet/lib/gen-image.sh",
+  "deployment": "factory-image",
+  "generated_size": "1536x1024",
+  "quality": "high",
+  "optimized": "ImageMagick WebP, 1200x800, quality 68",
+  "license": "Original factory-generated asset for this product"
+}

@@ -1,0 +1,8 @@
+{
+  "slug": "ci-provider-failover-drill",
+  "title": "CI Provider Failover Drill",
+  "summary": "Prove one GitHub Actions job can run on another runner.",
+  "artifact_class": "cli",
+  "monetization": "freemium",
+  "success_measure": "At least 80% of pilot repositories reproduce one selected release-check job on an independent runner within one hour."
+}
