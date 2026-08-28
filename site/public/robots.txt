@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://ci-provider-failover-drill.sociobot.in/sitemap.xml

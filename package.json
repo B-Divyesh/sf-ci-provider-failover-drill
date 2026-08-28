@@ -1,0 +1,21 @@
+{
+  "name": "ci-provider-failover-drill-site",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --config site/vite.config.ts",
+    "preview": "vite preview --config site/vite.config.ts --host 127.0.0.1 --port 4173",
+    "build": "npm run build:cli && npm run build:site",
+    "build:cli": "cargo build --release --locked",
+    "build:site": "vite build --config site/vite.config.ts && cp dist/site/index.html dist/site/404.html",
+    "test": "cargo test --locked && cargo build --locked && npm run build:site && playwright test",
+    "test:claims": "playwright test"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.58.2",
+    "typescript": "5.9.2",
+    "vite": "7.3.6"
+  }
+}

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "packet-generation",
+    "claim": "The CLI creates a five-file provider-neutral drill packet from one selected job.",
+    "where": "landing preview, demo, README",
+    "test": "npm run test:claims -- --grep @claim:packet-generation",
+    "sandbox": "bundled sample repository in a fresh temporary directory"
+  },
+  {
+    "id": "release-safety",
+    "claim": "Release and publish commands stay blocked unless explicitly enabled.",
+    "where": "landing facts, boundaries, README, terms",
+    "test": "npm run test:claims -- --grep @claim:release-safety",
+    "sandbox": "bundled sample with npm publish; inspect generated run.sh and report.md"
+  },
+  {
+    "id": "secret-redaction",
+    "claim": "Secret names and values do not appear in generated packet files.",
+    "where": "landing facts, demo, README, privacy",
+    "test": "npm run test:claims -- --grep @claim:secret-redaction",
+    "sandbox": "bundled sample with secrets.NPM_TOKEN; scan every generated report file"
+  },
+  {
+    "id": "offline-generation",
+    "claim": "The CLI analyzes local workflow files without a network request.",
+    "where": "README privacy section",
+    "test": "npm run test:claims -- --grep @claim:offline-generation",
+    "sandbox": "fresh temporary directory with HTTP and HTTPS proxies set to an unreachable address"
+  },
+  {
+    "id": "demo-sandbox",
+    "claim": "The demo uses bundled sample data and saves no demo records.",
+    "where": "demo banner and README",
+    "test": "npm run test:claims -- --grep @claim:demo-sandbox",
+    "sandbox": "fresh browser context at /demo; reset and inspect the demo storage namespace"
+  },
+  {
+    "id": "privacy-local",
+    "claim": "The website demo does not send data to another origin.",
+    "where": "privacy page",
+    "test": "npm run test:claims -- --grep @claim:privacy-local",
+    "sandbox": "fresh browser context; record every request during the full demo flow"
+  },
+  {
+    "id": "paid-license",
+    "claim": "A returned Team license is stored and verified through the Sociobot API.",
+    "where": "Team and privacy pages",
+    "test": "npm run test:claims -- --grep @claim:paid-license",
+    "sandbox": "fresh browser context with a recorded valid Sociobot verification response"
+  },
+  {
+    "id": "team-history",
+    "claim": "Team saves drill history in the browser and downloads an organization report template.",
+    "where": "pricing and Team pages",
+    "test": "npm run test:claims -- --grep @claim:team-history",
+    "sandbox": "fresh browser context with a valid cached verdict; save sample JSON and inspect download"
+  },
+  {
+    "id": "paid-contract",
+    "claim": "Team costs $49 once while packet export and safety checks remain free.",
+    "where": "landing pricing, terms, README",
+    "test": "npm run test:claims -- --grep @claim:paid-contract",
+    "sandbox": "fresh browser context; assert price, free boundary, and Sociobot checkout link"
+  }
+]
