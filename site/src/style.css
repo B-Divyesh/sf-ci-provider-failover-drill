@@ -154,8 +154,8 @@ input, textarea { width: 100%; padding: 12px; color: var(--ink); background: var
   .hero { grid-template-columns: 1fr; min-height: auto; padding-top: 64px; }
   .hero-copy { display: contents; }
   .hero-copy .eyebrow, .hero-copy h1, .hero-copy .lede, .hero-copy .hero-action { grid-column: 1; }
-  .map-plate { grid-row: 5; margin-top: 8px; }
-  .plain-facts { grid-row: 6; }
+  .plain-facts { grid-row: 5; margin-top: 28px; }
+  .map-plate { grid-row: 6; margin-top: 32px; }
   .coordinate { display: none; }
   .section-intro, .limits, .pricing, .license-panel { grid-template-columns: 1fr; }
   .section-intro .eyebrow { grid-row: auto; }
@@ -180,7 +180,14 @@ input, textarea { width: 100%; padding: 12px; color: var(--ink); background: var
   .demo-banner { align-items: stretch; flex-direction: column; }
   .demo-banner div { width: 100%; }
   .demo-banner button { flex: 1; }
+  .plain-facts { gap: 8px 16px; }
 }
+
+.import-control { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; padding: 10px 16px; color: var(--ink); border: 2px solid var(--ink); cursor: pointer; font-weight: 800; }
+.import-control input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.import-choice { display: flex; flex-wrap: wrap; gap: 12px 24px; margin: 16px 0; border: 1px dashed var(--grid); }
+.import-choice label { display: inline-flex; min-height: 44px; align-items: center; gap: 8px; font-weight: 400; }
+.import-choice input { width: 20px; }
 
 @media (prefers-color-scheme: dark) {
   :root { --paper: #101815; --sheet: #17231f; --ink: #f2eddf; --muted: #bac7bf; --contour: #f17a61; --river: #6fcbd0; --moss: #9fc59c; --amber: #f2c36b; --danger: #ff8e85; --grid: #53615a; --focus: #f17a61; }

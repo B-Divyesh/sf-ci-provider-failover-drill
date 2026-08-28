@@ -10,12 +10,12 @@ type Page = { title: string; description: string; body: string; demo?: boolean }
 type Verdict = { valid: boolean; reason: string; checkedAt: number; token: string };
 
 const routeMeta: Record<string, [string, string]> = {
-  "/": ["CI Failover Drill — prove one job runs elsewhere", "Turn one GitHub Actions job into a safe, provider-neutral container drill."],
-  "/demo": ["Demo — CI Provider Failover Drill", "See a sample release-check job become a safe failover packet."],
+  "/": ["CI Provider Failover Drill — test one job", "Turn one GitHub Actions job into a provider-neutral container drill."],
+  "/demo": ["Demo — CI Provider Failover Drill", "See a sample release-check job become a failover packet."],
   "/team": ["Team tools — CI Provider Failover Drill", "Restore a Team license and keep local drill history."],
   "/privacy": ["Privacy — CI Provider Failover Drill", "How CI Provider Failover Drill handles workflows, reports, and licenses."],
   "/terms": ["Terms — CI Provider Failover Drill", "Terms for the free CLI and one-time Team license."],
-  "/404": ["Page not found — CI Provider Failover Drill", "Return to the CI Provider Failover Drill map."]
+  "/404": ["Page not found — CI Provider Failover Drill", "Return to CI Provider Failover Drill."]
 };
 
 function header(): string {
@@ -58,14 +58,13 @@ function landing(): Page {
     body: `
       <main id="main">
         <section class="hero survey-section" aria-labelledby="landing-title">
-          <div class="coordinate" aria-hidden="true">N 37°46′ · W 122°25′</div>
           <div class="hero-copy">
-            <p class="eyebrow">Outage route / field check 01</p>
-            <h1 id="landing-title" tabindex="-1">Prove your CI escape route.</h1>
+            <p class="eyebrow">CI provider failover drill</p>
+            <h1 id="landing-title" tabindex="-1">Prove one CI job runs elsewhere.</h1>
             <p class="lede">For GitHub Actions maintainers who need one critical job to run during an outage.</p>
             <div class="hero-action">
               <a class="button primary" href="/demo" data-link>Try it with sample data</a>
-              <span>See a safe release-check packet in one click.</span>
+              <span>See a sample packet with one blocked npm publish step.</span>
             </div>
             <ul class="plain-facts" aria-label="Product facts">
               <li>Free local drill</li>
@@ -81,7 +80,7 @@ function landing(): Page {
         </section>
 
         <section class="preview survey-section" aria-labelledby="preview-title">
-          <div class="section-mark"><span>PLATE 02</span><span>KNOWN ROUTE</span></div>
+          <div class="section-mark"><span>Sample result</span><span>Release check</span></div>
           <div class="section-intro">
             <p class="eyebrow">The product</p>
             <h2 id="preview-title">See what the drill catches</h2>
@@ -98,20 +97,20 @@ function landing(): Page {
         </section>
 
         <section class="steps survey-section" aria-labelledby="steps-title">
-          <div class="section-mark"><span>ROUTE 03</span><span>THREE LEGS</span></div>
+          <div class="section-mark"><span>How it works</span><span>Three steps</span></div>
           <div class="section-intro">
             <p class="eyebrow">How it works</p>
-            <h2 id="steps-title">Make the escape route repeatable</h2>
+            <h2 id="steps-title">Generate and run the packet</h2>
           </div>
           <ol class="route-steps">
-            <li><span class="step-number">01</span><div><h3>Select one job</h3><p>Point the CLI at a workflow and job key.</p></div></li>
-            <li><span class="step-number">02</span><div><h3>Inspect the packet</h3><p>Review files, network hosts, anonymous inputs, and skipped actions.</p></div></li>
+            <li><span class="step-number">01</span><div><h3>Select one job</h3><p>Point the CLI at a workflow and job name.</p></div></li>
+            <li><span class="step-number">02</span><div><h3>Inspect the packet</h3><p>Review files, network hosts, anonymous inputs, and GitHub-only actions.</p></div></li>
             <li><span class="step-number">03</span><div><h3>Run it elsewhere</h3><p>Use the pinned container on a laptop or independent Docker runner.</p></div></li>
           </ol>
         </section>
 
         <section id="install" class="install survey-section" aria-labelledby="install-title">
-          <div class="section-mark"><span>FIELD KIT</span><span>RUST 1.85+</span></div>
+          <div class="section-mark"><span>Install</span><span>Rust 1.85+</span></div>
           <div class="section-intro">
             <p class="eyebrow">Install</p>
             <h2 id="install-title">Run the first drill</h2>
@@ -135,7 +134,7 @@ function landing(): Page {
           <ul class="boundary-list">
             <li><strong>No automatic cutover.</strong> You decide where and when to run.</li>
             <li><strong>No secret storage.</strong> Reports use anonymous input labels.</li>
-            <li><strong>No universal conversion.</strong> Provider actions become named assumptions.</li>
+            <li><strong>No universal conversion.</strong> GitHub-only actions become named assumptions.</li>
             <li><strong>No surprise releases.</strong> Publish commands need an explicit flag.</li>
           </ul>
         </section>
@@ -143,10 +142,10 @@ function landing(): Page {
         <section class="pricing survey-section" aria-labelledby="pricing-title">
           <div class="price-copy">
             <p class="eyebrow">Team license</p>
-            <h2 id="pricing-title">Keep a shared drill record</h2>
-            <p>Team adds browser-only drill history and organization report templates.</p>
+            <h2 id="pricing-title">Keep drill records in this browser</h2>
+            <p>Team saves drill history locally. Export it to move it between browsers.</p>
             <p class="price"><span>$49</span> one-time purchase</p>
-            <p class="legal-note">Sociobot is the merchant of record. Refunds are handled there.</p>
+            <p class="legal-note">Payment opens Sociobot checkout.</p>
           </div>
           <div class="price-actions">
             <a class="button primary" href="https://api.sociobot.in/api/v1/products/ci-provider-failover-drill/checkout">Buy Team for $49 <span class="sr-only">(opens hosted checkout)</span></a>
@@ -167,7 +166,7 @@ function demo(): Page {
       <main id="main" class="inner-main">
         <section class="page-heading">
           <p class="eyebrow">Demo / sample repository</p>
-          <h1 tabindex="-1">Inspect a safe failover packet.</h1>
+          <h1 tabindex="-1">Inspect the sample failover packet.</h1>
           <p>The sample selects a realistic Node release-check job.</p>
         </section>
         <section class="demo-grid" aria-labelledby="demo-result">
@@ -217,7 +216,7 @@ function privacy(): Page {
         <h2>Demo data</h2>
         <p>The website demo uses a bundled sample. It does not upload or save your repository data.</p>
         <h2>Team data</h2>
-        <p>Team drill history stays in this browser. You can delete it from the Team page.</p>
+        <p>Team drill history stays in this browser. You can export, import, or delete it from the Team page.</p>
         <h2>License checks</h2>
         <p>A Team token is stored in this browser. It is sent only to the Sociobot license API for verification.</p>
         <p>The last verdict is cached for one day. The checkout site handles payment details.</p>
@@ -238,7 +237,7 @@ function terms(): Page {
         <p>Release commands stay blocked unless you pass the explicit release flag. Inspect every generated packet before execution.</p>
         <h2>Team purchase</h2>
         <p>Team costs $49 as a one-time purchase. It covers the current browser tools and future v1 updates.</p>
-        <p>Sociobot is the merchant of record. Its checkout handles payment, receipts, and refunds.</p>
+        <p>Payment opens Sociobot checkout. See the <a href="https://sociobot.in/terms">Sociobot terms and refund policy</a>.</p>
         <h2>Service limits</h2>
         <p>The drill reports assumptions but cannot guarantee another provider will stay available. Keep an independent runner and test it regularly.</p>
         <h2>Contact</h2>
@@ -254,7 +253,7 @@ function team(): Page {
       <main id="main" class="inner-main">
         <section class="page-heading">
           <p class="eyebrow">Team / local organization record</p>
-          <h1 tabindex="-1">Keep drill results in one field log.</h1>
+          <h1 tabindex="-1">Keep drill results in this browser.</h1>
           <p>Team stores imported drill reports in this browser.</p>
         </section>
         <div id="license-notice" class="notice" aria-live="polite"></div>
@@ -286,7 +285,8 @@ function teamTools(): string {
       <textarea id="report-json" rows="9" required>{"job":"release-check","ready":true,"commands_blocked":1}</textarea>
       <button class="button primary" type="submit">Save drill report</button>
     </form>
-    <div class="team-actions"><button id="download-template" class="button secondary">Download report template</button><button id="clear-history" class="text-button">Delete local history</button></div>
+    <div class="team-actions"><button id="export-history" class="button secondary">Export drill history</button><label class="import-control" for="import-history">Import drill history<input id="import-history" type="file" accept="application/json" /></label><button id="clear-history" class="text-button">Delete local history</button></div>
+    <fieldset class="import-choice"><legend>When importing</legend><label><input type="radio" name="import-mode" value="merge" checked /> Merge with saved reports</label><label><input type="radio" name="import-mode" value="replace" /> Replace saved reports</label></fieldset>
     <ul id="history-list" class="history-list" aria-label="Saved drill reports"></ul>
   </section>`;
 }
@@ -295,18 +295,19 @@ function notFound(): Page {
   return { title: routeMeta["/404"][0], description: routeMeta["/404"][1], body: `
     <main id="main" class="not-found">
       <div class="contour-404" aria-hidden="true">404</div>
-      <p class="eyebrow">Outside mapped terrain</p>
-      <h1 tabindex="-1">This route is not on the map.</h1>
+      <p class="eyebrow">Page not found</p>
+      <h1 tabindex="-1">This route was not found.</h1>
       <p>The address may have moved. Return to the drill start.</p>
       <a class="button primary" href="/" data-link>Return to the start</a>
     </main>` };
 }
 
 function demoBanner(): string {
-  return `<aside class="demo-banner" aria-label="Demo mode"><strong>Demo — sample data, nothing is saved</strong><div><button id="reset-demo">Reset demo</button><button id="start-real">Start for real</button></div></aside>`;
+  return `<aside class="demo-banner" aria-label="Demo mode"><strong>Demo — sample data, nothing is saved</strong><div><button id="reset-demo">Reset demo</button><button id="start-real">View install command</button></div></aside>`;
 }
 
 function normalizePath(): string {
+  if (new URLSearchParams(window.location.search).get("demo") === "1") return "/demo";
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
   return routeMeta[path] ? path : "/404";
 }
@@ -317,6 +318,10 @@ function render(focus = false): void {
   document.title = page.title;
   document.querySelector('meta[name="description"]')?.setAttribute("content", page.description);
   document.querySelector('link[rel="canonical"]')?.setAttribute("href", `https://ci-provider-failover-drill.sociobot.in${path === "/404" ? window.location.pathname : path}`);
+  document.querySelector('meta[property="og:title"]')?.setAttribute("content", page.title);
+  document.querySelector('meta[property="og:description"]')?.setAttribute("content", page.description);
+  document.querySelector('meta[name="twitter:title"]')?.setAttribute("content", page.title);
+  document.querySelector('meta[name="twitter:description"]')?.setAttribute("content", page.description);
   const app = document.querySelector<HTMLDivElement>("#app");
   if (!app) return;
   app.innerHTML = `${page.demo ? demoBanner() : ""}${header()}${page.body}${footer()}`;
@@ -409,13 +414,30 @@ function bindTeamEvents(): void {
     const notice = document.querySelector("#license-notice");
     if (notice) notice.textContent = "Local drill history deleted.";
   });
-  document.querySelector("#download-template")?.addEventListener("click", () => {
-    const template = "# Organization failover report\n\n## Selected job\n\n## Last drill result\n\n## Provider assumptions\n\n## Next drill date\n";
+  document.querySelector("#export-history")?.addEventListener("click", () => {
+    const records = readHistory();
     const link = document.createElement("a");
-    link.href = URL.createObjectURL(new Blob([template], { type: "text/markdown" }));
-    link.download = "organization-failover-report.md";
+    link.href = URL.createObjectURL(new Blob([JSON.stringify({ schema_version: 1, records }, null, 2)], { type: "application/json" }));
+    link.download = "cifail-drill-history.json";
     link.click();
     URL.revokeObjectURL(link.href);
+  });
+  document.querySelector<HTMLInputElement>("#import-history")?.addEventListener("change", async (event) => {
+    const input = event.currentTarget as HTMLInputElement;
+    const notice = document.querySelector("#license-notice");
+    const file = input.files?.[0];
+    if (!file) return;
+    try {
+      const data = JSON.parse(await file.text()) as { schema_version?: number; records?: unknown };
+      if (data.schema_version !== 1 || !Array.isArray(data.records) || !data.records.every((record) => typeof record === "object" && record !== null && typeof (record as Record<string, unknown>).job === "string")) throw new Error("invalid");
+      const mode = document.querySelector<HTMLInputElement>('input[name="import-mode"]:checked')?.value;
+      const records = data.records as Array<Record<string, unknown>>;
+      localStorage.setItem(TEAM_DATA_KEY, JSON.stringify(mode === "replace" ? records : [...readHistory(), ...records]));
+      if (notice) notice.textContent = `${records.length} drill ${records.length === 1 ? "report" : "reports"} imported.`;
+      renderHistory();
+    } catch {
+      if (notice) notice.textContent = "That file is not a valid drill history export.";
+    } finally { input.value = ""; }
   });
   renderHistory();
 }

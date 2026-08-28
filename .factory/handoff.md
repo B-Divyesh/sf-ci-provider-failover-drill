@@ -1,32 +1,34 @@
-# Review 1 handoff — FAIL
+# Polish 1 handoff
 
-Completed the adversarial first-read review for candidate
-`bc742b3809e53b5f4dfbff6c6094deb845bc0cd8` against the live product on
-28 August 2026 UTC. Product code was not modified. Full findings and evidence
-are in `.factory/review-1.md`.
+Repairs the release candidate using every finding in review 1. The CLI now
+recognizes release commands independent of option order or documented aliases,
+uses that result for network reporting, and keeps all release forms out of a
+packet unless `--allow-release` is explicit. The site has direct first-screen
+wording, isolated `?demo=1` entry, route-specific static metadata, a real 404,
+mobile first-screen facts, and local Team history JSON export/import.
 
-The landing page answers what the product does, who it serves, and what to
-click on both 390 px mobile and desktop. The browser demo passes its one-click,
-realistic-data, reset, storage-isolation, and same-origin request checks. The
-CLI demo creates the five expected files in a new temporary directory and
-leaves the caller directory unchanged.
+## Run and verify
 
-The verdict is FAIL. Without `--allow-release`, the valid command
-`npm --access public publish` is copied into generated `run.sh` with
-`commands_blocked: 0`; its required npm registry is also reported as no network
-host. These contradict two listed claims and are the release blockers.
+```sh
+npm ci
+npm test
+npm run lint
+npm run build
+cargo package --locked --allow-dirty
+```
 
-All 13 exact claim commands passed separately from the clean checkout. The full
-quality gates also passed:
+`npm test` passed with 6 Rust tests and 23 Playwright tests. `npm run lint`,
+`npm run build`, and `cargo package --locked --allow-dirty` passed. All 16
+declared claim commands were run individually from a clean dependency install;
+each rebuilds its CLI and static site before its tagged test. The local
+connection-recorder claim observed no connection attempts from `cifail drill`
+or `cifail demo`.
 
-- `npm test`: 5 Rust tests and 20 Chromium tests passed.
-- `npm run lint`: TypeScript, rustfmt, and Clippy passed.
-- `npm run build`: release CLI and `dist/site/` produced.
-- Factory live URL verification passed with zero console errors.
-- Live light/dark axe checks found zero violations on six routes.
+The static deployment directory is `dist/site`. Deploy with:
 
-Other open findings cover incomplete CLI privacy evidence, unlisted CLI demo
-claims, wrong metadata in cold deep-link HTML, misleading Team sharing copy,
-unsupported “safe” wording, off-screen mobile facts, copy/terminology issues,
-and missing local history import/export. No infrastructure, DNS, billing, or
-product source was changed.
+```sh
+/opt/fleet/lib/deploy-static.sh ci-provider-failover-drill dist/site
+```
+
+The deployed commit, live verification, screenshots, and Lighthouse evidence
+are appended after the deployment check.

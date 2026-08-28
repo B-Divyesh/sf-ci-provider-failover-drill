@@ -6,7 +6,7 @@
 - Local URL: `http://127.0.0.1:5173/demo` after `npm run dev`
 - Direct entry: `/demo` opens the sample without setup.
 - Reset: select **Reset demo** in the persistent demo banner.
-- Exit: select **Start for real** to reach the install command.
+- Exit: select **View install command** to reach the install command.
 - Storage namespace: `demo:`. The v1 demo is read-only and creates no keys.
 
 The sample is a Node package with a `release-check` job. It has checkout,

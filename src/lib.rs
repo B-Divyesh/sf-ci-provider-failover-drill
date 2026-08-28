@@ -192,38 +192,88 @@ fn shell_env_value(value: &str) -> String {
     }
 }
 
-fn is_release_command(command: &str) -> bool {
-    let lower = command.to_ascii_lowercase();
-    [
-        "npm publish",
-        "cargo publish",
-        "docker push",
-        "gh release create",
-        "twine upload",
-        "gem push",
-        "helm push",
-        "kubectl apply",
-        "terraform apply",
-    ]
-    .iter()
-    .any(|needle| lower.contains(needle))
+#[derive(Default)]
+struct CommandFacts {
+    release: bool,
+    npm: bool,
+    cargo: bool,
+    pip: bool,
+    docker: bool,
+}
+
+/// Read the executable words in each simple shell command. This intentionally
+/// does not execute or expand the shell: it is a conservative inspection pass
+/// used for the packet's safety boundary and report.
+fn command_facts(command: &str) -> CommandFacts {
+    let mut facts = CommandFacts::default();
+    let normalized = command.replace("\\\n", " ");
+    for part in normalized.split(['\n', ';', '|', '&']) {
+        let words = part
+            .split_whitespace()
+            .map(|word| word.trim_matches(|c| matches!(c, '\'' | '\"' | '(' | ')')))
+            .collect::<Vec<_>>();
+        if words.is_empty() {
+            continue;
+        }
+        let executable = words[0]
+            .rsplit('/')
+            .next()
+            .unwrap_or(words[0])
+            .to_ascii_lowercase();
+        let rest = &words[1..];
+        let has = |word: &str| rest.iter().any(|arg| arg.eq_ignore_ascii_case(word));
+        let npm_publish = (executable == "npm" && (has("publish") || has("pub")))
+            || (executable == "pnpm" && has("publish"))
+            || (executable == "yarn"
+                && rest.len() >= 2
+                && rest[0].eq_ignore_ascii_case("npm")
+                && (rest[1].eq_ignore_ascii_case("publish")
+                    || rest[1].eq_ignore_ascii_case("pub")));
+        let release = npm_publish
+            || (executable == "cargo" && has("publish"))
+            || (executable == "docker" && has("push"))
+            || (executable == "gh"
+                && rest.len() >= 2
+                && rest[0] == "release"
+                && rest[1] == "create")
+            || (executable == "git"
+                && has("push")
+                && rest
+                    .iter()
+                    .any(|arg| *arg == "--tags" || *arg == "--follow-tags"))
+            || (executable == "twine" && has("upload"))
+            || (executable == "gem" && has("push"))
+            || (executable == "helm" && has("push"))
+            || (executable == "kubectl" && has("apply"))
+            || (executable == "terraform" && has("apply"));
+        facts.release |= release;
+        facts.npm |= executable == "npm"
+            || executable == "npx"
+            || executable == "pnpm"
+            || executable == "yarn";
+        facts.cargo |= executable == "cargo";
+        facts.pip |= executable == "pip" || executable == "pip3";
+        facts.docker |= executable == "docker";
+    }
+    facts
 }
 
 fn infer_files(command: &str) -> Vec<&'static str> {
+    let facts = command_facts(command);
     let mut files = Vec::new();
-    if command.contains("npm ") || command.contains("npx ") {
+    if facts.npm {
         files.push("package.json");
     }
-    if command.contains("npm ci") {
+    if command_facts(command).npm && command.to_ascii_lowercase().contains(" ci") {
         files.push("package-lock.json");
     }
-    if command.contains("cargo ") {
+    if facts.cargo {
         files.push("Cargo.toml");
     }
-    if command.contains("cargo build") || command.contains("cargo test") {
+    if facts.cargo && (command.contains("cargo build") || command.contains("cargo test")) {
         files.push("Cargo.lock");
     }
-    if command.contains("pip install") {
+    if facts.pip && command.to_ascii_lowercase().contains("install") {
         files.push("requirements.txt");
     }
     if command.contains("go ") {
@@ -233,18 +283,18 @@ fn infer_files(command: &str) -> Vec<&'static str> {
 }
 
 fn infer_hosts(command: &str) -> BTreeSet<String> {
-    let lower = command.to_ascii_lowercase();
+    let facts = command_facts(command);
     let mut hosts = BTreeSet::new();
-    if lower.contains("npm ci") || lower.contains("npm install") || lower.contains("npm publish") {
+    if facts.npm {
         hosts.insert("registry.npmjs.org".to_string());
     }
-    if lower.contains("cargo ") {
+    if facts.cargo {
         hosts.insert("crates.io".to_string());
     }
-    if lower.contains("pip install") {
+    if facts.pip {
         hosts.insert("pypi.org".to_string());
     }
-    if lower.contains("docker ") {
+    if facts.docker {
         hosts.insert("container registry (set by image name)".to_string());
     }
     let url_re = Regex::new(r"https?://([A-Za-z0-9.-]+)").expect("valid host regex");
@@ -398,7 +448,7 @@ pub fn generate(options: &DrillOptions) -> Result<DrillReport> {
         if !exports.is_empty() {
             command = format!("{}\n{}", exports.join("\n"), command);
         }
-        if is_release_command(&command) && !options.allow_release {
+        if command_facts(&command).release && !options.allow_release {
             blocked.push(name);
         } else {
             commands.push(format!(
@@ -617,5 +667,25 @@ mod tests {
                 .unwrap()
                 .contains("npm publish")
         );
+    }
+
+    #[test]
+    fn recognizes_release_commands_with_options_aliases_and_continuations() {
+        let cases = [
+            "npm --access public publish",
+            "npm pub",
+            "pnpm publish",
+            "yarn npm publish",
+            "npm --access public \\\n+ publish",
+            "git push --tags",
+            "cargo publish",
+            "docker push example/image",
+            "gh release create v1",
+        ];
+        for command in cases {
+            assert!(command_facts(command).release, "{command}");
+        }
+        let hosts = infer_hosts("npm --access public publish");
+        assert!(hosts.contains("registry.npmjs.org"));
     }
 }

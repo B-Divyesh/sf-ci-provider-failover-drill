@@ -2,9 +2,8 @@
 
 Prove one GitHub Actions job can run on another runner.
 
-`cifail` turns one selected workflow job into a pinned container command and a
-portable drill packet. It checks files, secret references, network needs, and
-provider-only actions before an outage makes them urgent.
+`cifail` turns one workflow job into five files for a fixed Docker image. It
+lists required files and network hosts, and marks GitHub-only actions for replacement.
 
 It does not store secrets, change CI settings, or cut over providers. Release
 and publish commands stay blocked unless you pass `--allow-release`.
@@ -37,7 +36,7 @@ cifail --help
 The first release is `0.1.0`. The factory publishes packages after handoff;
 this repository does not use registry credentials.
 
-## Use
+## Generate and run a packet
 
 Generate a packet without running the selected commands:
 
@@ -52,7 +51,7 @@ cifail drill \
 The packet contains:
 
 - `Dockerfile`: a pinned, provider-neutral runner image.
-- `run.sh`: translated shell steps with anonymous secret inputs.
+- `run.sh`: translated shell steps with anonymous inputs.
 - `.env.example`: placeholder secret variables, never names or values.
 - `drill.json`: machine-readable checks for reporting.
 - `report.md`: the local and generic-runner drill report.
@@ -63,9 +62,9 @@ Inspect those files, then run the packet locally:
 cifail drill [same options] --execute
 ```
 
-Execution needs Docker. The command exits `0` when the packet is ready or the
-drill passes, `2` for input problems, `3` when safety checks block the drill,
-and `4` when Docker returns a failure. Add `--json` for script output.
+Execution needs Docker. Exit `0` means ready or passed. Exit `2` means bad
+input. Exit `3` means blocked. Exit `4` means Docker failed. Add `--json` for
+script output.
 
 Release commands such as `npm publish`, `docker push`, and `gh release create`
 are omitted by default. Use `--allow-release` only in a disposable test target.
@@ -82,7 +81,7 @@ npm run build
 
 `npm run build` compiles the release binary and writes the static site to
 `dist/site/`. The factory deploys that directory as a static site. `cargo
-package --allow-dirty` verifies the publishable crate.
+package --allow-dirty` verifies the Rust package can be published.
 
 ## Privacy and pricing
 
@@ -90,10 +89,10 @@ The free CLI has no telemetry and makes no product requests. Inputs and drill
 packets stay on your machine. Docker or package commands may use the network
 only when you explicitly execute a packet.
 
-The optional Team license is a one-time $49 purchase. It adds saved drill
-history and organization report templates in the site preview. Scheduled runs
-need an organization runner and are planned, not included in v1. Sociobot is
-the merchant of record.
+The optional Team license is a one-time $49 purchase. It adds local drill
+history with JSON export and import in the site preview. Scheduled runs need an
+organization runner and are planned, not included in v1. Payment opens Sociobot
+checkout.
 
 See [Privacy](https://ci-provider-failover-drill.sociobot.in/privacy) and
 [Terms](https://ci-provider-failover-drill.sociobot.in/terms).

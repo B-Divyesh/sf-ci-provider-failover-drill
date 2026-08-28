@@ -28,6 +28,27 @@
     "sandbox": "fresh temporary directory with HTTP and HTTPS proxies set to an unreachable address"
   },
   {
+    "id": "local-privacy",
+    "claim": "The CLI makes no connection attempts while generating a packet or running the bundled demo.",
+    "where": "README privacy section, privacy page",
+    "test": "npm run test:claims -- --grep @claim:local-privacy",
+    "sandbox": "LD_PRELOAD connection recorder around cifail drill and cifail demo in a fresh temporary directory"
+  },
+  {
+    "id": "cli-demo-isolation",
+    "claim": "The CLI demo uses the bundled sample and does not write to the caller repository.",
+    "where": "README sample section, terminal recording",
+    "test": "npm run test:claims -- --grep @claim:cli-demo-isolation",
+    "sandbox": "run the documented demo command from a temporary caller directory and compare its unchanged contents with the reported sample facts"
+  },
+  {
+    "id": "no-ci-mutation",
+    "claim": "Generating a packet does not change CI settings or cut over providers.",
+    "where": "landing boundaries, README",
+    "test": "npm run test:claims -- --grep @claim:no-ci-mutation",
+    "sandbox": "snapshot a copied sample repository before and after normal packet generation"
+  },
+  {
     "id": "demo-sandbox",
     "claim": "The demo uses bundled sample data and saves no demo records.",
     "where": "demo banner and README",

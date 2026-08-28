@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { execFileSync } from "node:child_process";
-import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -42,6 +42,12 @@ test("@claim:inspection-report records required files, network hosts, and provid
   expect(markdown).toContain("### Required paths");
   expect(markdown).toContain("### Network hosts");
   expect(markdown).toContain("### Provider assumptions");
+  const variant = mkdtempSync(join(tmpdir(), "cifail-npm-options-"));
+  cpSync(sample, join(variant, "repo"), { recursive: true });
+  const workflow = join(variant, "repo/.github/workflows/release.yml");
+  writeFileSync(workflow, readFileSync(workflow, "utf8").replace("npm publish", "npm --access public publish"));
+  const stdout = execFileSync(binary, ["drill", "--workflow", workflow, "--job", "release-check", "--image", image, "--repo", join(variant, "repo"), "--out", join(variant, "packet"), "--json"], { encoding: "utf8" });
+  expect(JSON.parse(stdout).network_hosts).toContain("registry.npmjs.org");
 });
 
 test("@claim:release-safety blocks publish commands by default", () => {
@@ -49,6 +55,27 @@ test("@claim:release-safety blocks publish commands by default", () => {
   expect(report.commands_blocked).toBe(1);
   expect(readFileSync(join(output, "run.sh"), "utf8")).not.toContain("npm publish");
   expect(readFileSync(join(output, "report.md"), "utf8")).toContain("Publish package");
+  for (const command of ["npm --access public publish", "npm pub", "pnpm publish", "yarn npm publish", "git push --tags", "cargo publish", "docker push example/image", "gh release create v1"]) {
+    const root = mkdtempSync(join(tmpdir(), "cifail-release-form-"));
+    cpSync(sample, join(root, "repo"), { recursive: true });
+    const workflow = join(root, "repo/.github/workflows/release.yml");
+    const replacement = command;
+    writeFileSync(workflow, readFileSync(workflow, "utf8").replace("npm publish", replacement));
+    const args = ["drill", "--workflow", workflow, "--job", "release-check", "--image", image, "--repo", join(root, "repo"), "--out", join(root, "blocked"), "--json"];
+    const blocked = JSON.parse(execFileSync(binary, args, { encoding: "utf8" }));
+    expect(blocked.commands_blocked).toBe(1);
+    expect(readFileSync(join(root, "blocked/run.sh"), "utf8")).not.toContain(command.replace("\\\n", "\n"));
+    const included = JSON.parse(execFileSync(binary, [...args.slice(0, -1), "--allow-release", "--json"], { encoding: "utf8" }));
+    expect(included.commands_blocked).toBe(0);
+    expect(readFileSync(join(root, "blocked/run.sh"), "utf8")).toContain(command.replace("\\\n", "\n"));
+  }
+  const root = mkdtempSync(join(tmpdir(), "cifail-release-continuation-"));
+  cpSync(sample, join(root, "repo"), { recursive: true });
+  const workflow = join(root, "repo/.github/workflows/release.yml");
+  writeFileSync(workflow, readFileSync(workflow, "utf8").replace("run: npm publish", "run: |\n          npm --access public \\\n          publish"));
+  const stdout = execFileSync(binary, ["drill", "--workflow", workflow, "--job", "release-check", "--image", image, "--repo", join(root, "repo"), "--out", join(root, "blocked"), "--json"], { encoding: "utf8" });
+  expect(JSON.parse(stdout).commands_blocked).toBe(1);
+  expect(readFileSync(join(root, "blocked/run.sh"), "utf8")).not.toContain("npm --access public");
 });
 
 test("@claim:secret-redaction removes secret names and values", () => {
@@ -68,8 +95,46 @@ test("@claim:offline-generation analyzes local files without network", () => {
   expect(JSON.parse(stdout).ready).toBe(true);
 });
 
+test("@claim:local-privacy makes no connection attempts while generating or running the demo", () => {
+  const root = mkdtempSync(join(tmpdir(), "cifail-local-privacy-"));
+  const source = join(root, "no-egress.c");
+  const library = join(root, "no-egress.so");
+  const log = join(root, "egress.log");
+  writeFileSync(source, "#define _GNU_SOURCE\n#include <dlfcn.h>\n#include <stdlib.h>\n#include <sys/socket.h>\n#include <stdio.h>\nint connect(int a,const struct sockaddr*b,socklen_t c){FILE*f=fopen(getenv(\"CIFAIL_EGRESS_LOG\"),\"a\");if(f){fputs(\"connect\\n\",f);fclose(f);} return ((int(*)(int,const struct sockaddr*,socklen_t))dlsym(RTLD_NEXT,\"connect\"))(a,b,c);}\nssize_t sendto(int a,const void*b,size_t c,int d,const struct sockaddr*e,socklen_t f){FILE*g=fopen(getenv(\"CIFAIL_EGRESS_LOG\"),\"a\");if(g){fputs(\"sendto\\n\",g);fclose(g);} return ((ssize_t(*)(int,const void*,size_t,int,const struct sockaddr*,socklen_t))dlsym(RTLD_NEXT,\"sendto\"))(a,b,c,d,e,f);}");
+  execFileSync("cc", ["-shared", "-fPIC", source, "-o", library, "-ldl"]);
+  const env = { ...process.env, LD_PRELOAD: library, CIFAIL_EGRESS_LOG: log };
+  execFileSync(binary, ["drill", "--workflow", join(sample, ".github/workflows/release.yml"), "--job", "release-check", "--image", image, "--repo", sample, "--out", join(root, "packet")], { env });
+  execFileSync(binary, ["demo", "--out", join(root, "demo")], { env });
+  expect(existsSync(log) ? readFileSync(log, "utf8") : "").toBe("");
+  expect(existsSync(join(root, "packet/report.md"))).toBe(true);
+  expect(existsSync(join(root, "demo/failover-packet/report.md"))).toBe(true);
+});
+
+test("@claim:cli-demo-isolation keeps the caller directory unchanged and matches the browser sample", () => {
+  const caller = mkdtempSync(join(tmpdir(), "cifail-demo-caller-"));
+  writeFileSync(join(caller, "sentinel.txt"), "unchanged");
+  const before = readdirSync(caller);
+  const stdout = execFileSync(binary, ["demo", "--json"], { encoding: "utf8", cwd: caller });
+  const report = JSON.parse(stdout);
+  expect(readdirSync(caller)).toEqual(before);
+  expect(report.job).toBe("release-check");
+  expect(report.commands_included).toBe(3);
+  expect(report.commands_blocked).toBe(1);
+  expect(report.network_hosts).toContain("registry.npmjs.org");
+  expect(existsSync(join(report.packet_path, "report.md"))).toBe(true);
+});
+
+test("@claim:no-ci-mutation leaves the source repository unchanged", () => {
+  const root = mkdtempSync(join(tmpdir(), "cifail-no-mutation-"));
+  cpSync(sample, join(root, "repo"), { recursive: true });
+  const repo = join(root, "repo");
+  const before = readFileSync(join(repo, ".github/workflows/release.yml"), "utf8") + readFileSync(join(repo, "package.json"), "utf8");
+  execFileSync(binary, ["drill", "--workflow", join(repo, ".github/workflows/release.yml"), "--job", "release-check", "--image", image, "--repo", repo, "--out", join(root, "packet")]);
+  expect(readFileSync(join(repo, ".github/workflows/release.yml"), "utf8") + readFileSync(join(repo, "package.json"), "utf8")).toBe(before);
+});
+
 test("@claim:demo-sandbox opens sample data and stores no demo records", async ({ page }) => {
-  await page.goto("/demo");
+  await page.goto("/?demo=1");
   await expect(page.getByText("Demo — sample data, nothing is saved", { exact: true })).toBeVisible();
   await expect(page.getByText("3 included", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Reset demo" }).click();
@@ -124,7 +189,7 @@ test("replacing an invalid license token always verifies the replacement", async
   expect(requests).toEqual(["bad-token", "replacement-token"]);
 });
 
-test("@claim:team-history saves reports locally and downloads a template", async ({ page }) => {
+test("@claim:team-history exports, clears, imports, and restores local drill history", async ({ page }) => {
   await page.goto("/team");
   await page.evaluate(() => {
     localStorage.setItem("sb_license:ci-provider-failover-drill", "history-token");
@@ -134,8 +199,15 @@ test("@claim:team-history saves reports locally and downloads a template", async
   await page.getByRole("button", { name: "Save drill report" }).click();
   await expect(page.getByText("1 saved drill report")).toBeVisible();
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Download report template" }).click();
-  expect((await downloadPromise).suggestedFilename()).toBe("organization-failover-report.md");
+  await page.getByRole("button", { name: "Export drill history" }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toBe("cifail-drill-history.json");
+  const contents = readFileSync(await download.path() as string, "utf8");
+  await page.getByRole("button", { name: "Delete local history" }).click();
+  await expect(page.getByText("0 saved drill reports")).toBeVisible();
+  await page.locator("#import-history").setInputFiles({ name: "history.json", mimeType: "application/json", buffer: Buffer.from(contents) });
+  await expect(page.getByText("1 drill report imported.")).toBeVisible();
+  await expect(page.getByText("1 saved drill report")).toBeVisible();
 });
 
 test("@claim:paid-contract shows the price and free-core boundary", async ({ page }) => {
@@ -194,6 +266,10 @@ test("mobile first screen keeps its action and facts visible", async ({ page }) 
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   await expect(page.getByRole("link", { name: "Try it with sample data" })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  for (const fact of ["Free local drill", "No secrets stored", "Release steps stay blocked"]) {
+    const box = await page.getByText(fact, { exact: true }).boundingBox();
+    expect(box && box.y >= 0 && box.y + box.height <= 844).toBe(true);
+  }
 });
 
 test("mobile demo has no horizontal overflow and reachable touch targets", async ({ page }) => {
@@ -212,7 +288,7 @@ test("mobile demo has no horizontal overflow and reachable touch targets", async
 test("unknown routes return a real 404 response", async ({ page }) => {
   const response = await page.goto("/missing-place");
   expect(response?.status()).toBe(404);
-  await expect(page.getByRole("heading", { name: "This route is not on the map." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "This route was not found." })).toBeVisible();
 });
 
 test("static deployment keeps routes real and hashed assets immutable", () => {
@@ -222,5 +298,8 @@ test("static deployment keeps routes real and hashed assets immutable", () => {
   expect(config.routes).toContainEqual({ route: "/assets/*", headers: { "Cache-Control": "public, max-age=31536000, immutable" } });
   for (const route of ["demo", "team", "privacy", "terms"]) {
     expect(existsSync(join(process.cwd(), "dist/site", route, "index.html"))).toBe(true);
+    const html = readFileSync(join(process.cwd(), "dist/site", route, "index.html"), "utf8");
+    expect(html).toContain(`<link rel="canonical" href="https://ci-provider-failover-drill.sociobot.in/${route}"`);
+    expect(html).not.toContain("Prove your CI escape route");
   }
 });
