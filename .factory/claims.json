@@ -61,5 +61,33 @@
     "where": "landing pricing, terms, README",
     "test": "npm run test:claims -- --grep @claim:paid-contract",
     "sandbox": "fresh browser context; assert price, free boundary, and Sociobot checkout link"
+  },
+  {
+    "id": "runner-contract",
+    "claim": "The generated packet can run on a laptop or any runner with Docker.",
+    "where": "landing preview, README",
+    "test": "npm run test:claims -- --grep @claim:runner-contract",
+    "sandbox": "bundled sample in a temporary directory; inspect the Dockerfile and generic runner contract"
+  },
+  {
+    "id": "inspection-report",
+    "claim": "The CLI checks required files, network needs, and provider-only actions.",
+    "where": "README",
+    "test": "npm run test:claims -- --grep @claim:inspection-report",
+    "sandbox": "bundled sample; inspect drill.json and report.md for each category"
+  },
+  {
+    "id": "exit-codes",
+    "claim": "The CLI exits 2 for input problems, 3 for safety blocks, and 4 for Docker failures.",
+    "where": "README",
+    "test": "npm run test:claims -- --grep @claim:exit-codes",
+    "sandbox": "bundled sample with a missing job, missing required file, and controlled Docker shim"
+  },
+  {
+    "id": "license-verdict-cache",
+    "claim": "The last matching Team license verdict is cached for one day.",
+    "where": "privacy page",
+    "test": "npm run test:claims -- --grep @claim:license-verdict-cache",
+    "sandbox": "fresh browser context with a valid token-matched verdict less than one day old"
   }
 ]

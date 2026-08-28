@@ -5,11 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config site/vite.config.ts",
-    "preview": "vite preview --config site/vite.config.ts --host 127.0.0.1 --port 4173",
+    "preview": "node scripts/preview.mjs",
     "build": "npm run build:cli && npm run build:site",
     "build:cli": "cargo build --release --locked",
-    "build:site": "vite build --config site/vite.config.ts && cp dist/site/index.html dist/site/404.html",
-    "test": "cargo test --locked && cargo build --locked && npm run build:site && playwright test",
+    "build:site": "vite build --config site/vite.config.ts && node scripts/prepare-static-routes.mjs",
+    "typecheck": "tsc --noEmit",
+    "lint": "npm run typecheck && cargo fmt --all -- --check && cargo clippy --all-targets --all-features --locked -- -D warnings",
+    "test": "cargo test --locked && cargo build --locked && npm run typecheck && npm run build:site && playwright test",
+    "pretest:claims": "cargo build --locked && npm run build:site",
     "test:claims": "playwright test"
   },
   "devDependencies": {

@@ -11,6 +11,9 @@
   --danger: #a12d2d;
   --grid: #c9c1ae;
   --focus: #0d6670;
+  --install-bg: #17231f;
+  --install-ink: #f2eddf;
+  --install-muted: #bac7bf;
   --display: Georgia, "Times New Roman", serif;
   --body: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
@@ -28,11 +31,11 @@ button, .button { min-height: 48px; }
 .skip-link:focus { transform: translateY(0); }
 
 .site-header { position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between; width: min(1440px, 100%); min-height: 80px; margin: auto; padding: 16px clamp(20px, 5vw, 72px); border-bottom: 1px solid var(--grid); }
-.wordmark { display: flex; gap: 10px; align-items: center; color: var(--ink); font-size: 14px; font-weight: 800; letter-spacing: .08em; text-decoration: none; }
+.wordmark { display: flex; min-width: 44px; min-height: 44px; gap: 10px; align-items: center; color: var(--ink); font-size: 14px; font-weight: 800; letter-spacing: .08em; text-decoration: none; }
 .wordmark svg { width: 36px; height: 36px; fill: none; stroke: var(--contour); stroke-width: 2; }
 .wordmark svg circle { fill: var(--river); stroke: var(--paper); }
 nav { display: flex; gap: clamp(12px, 3vw, 32px); align-items: center; }
-nav a { min-height: 44px; display: inline-flex; align-items: center; color: var(--ink); font-size: 14px; text-decoration: none; border-bottom: 2px solid transparent; }
+nav a { display: inline-flex; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; color: var(--ink); font-size: 14px; text-decoration: none; border-bottom: 2px solid transparent; }
 nav a:hover { border-color: var(--contour); }
 
 main { display: block; }
@@ -79,12 +82,12 @@ h3 { font-size: 24px; }
 .step-number { color: var(--contour); font-size: 13px; }
 .route-steps p { color: var(--muted); }
 
-.install { background: var(--ink); color: #f2eddf; }
-.install h2, .install .section-mark { color: #f2eddf; border-color: #53615a; }
+.install { background: var(--install-bg); color: var(--install-ink); }
+.install h2, .install .section-mark { color: var(--install-ink); border-color: #53615a; }
 .install .eyebrow { color: #f17a61; }
-.install .section-intro p:last-child { color: #bac7bf; }
+.install .section-intro p:last-child { color: var(--install-muted); }
 .command-block { display: flex; align-items: stretch; max-width: 1000px; background: #101815; border: 1px solid #53615a; }
-.command-block code { flex: 1; padding: 22px; overflow-x: auto; color: #f2eddf; white-space: nowrap; }
+.command-block code { flex: 1; min-width: 0; padding: 22px; overflow-x: auto; color: var(--install-ink); white-space: nowrap; }
 .copy-button { padding: 12px 20px; color: #101815; background: #6fcbd0; border: 0; cursor: pointer; }
 pre { max-width: 100%; margin: 24px 0 0; padding: 24px; overflow-x: auto; color: #f2eddf; background: #101815; border-left: 4px solid #f17a61; font: 15px/1.7 var(--body); }
 .limits { display: grid; grid-template-columns: 1fr 1.3fr; gap: clamp(40px, 8vw, 120px); }
@@ -98,13 +101,14 @@ pre { max-width: 100%; margin: 24px 0 0; padding: 24px; overflow-x: auto; color:
 .price span { color: var(--contour); font: 64px/1 var(--display); }
 .legal-note, .price-actions p { color: var(--muted); font-size: 13px; }
 .price-actions { display: flex; flex-direction: column; align-items: start; justify-content: center; gap: 24px; }
-.text-link { font-weight: 800; }
+.text-link { display: inline-flex; min-height: 44px; align-items: center; font-weight: 800; }
 
 .inner-main, .prose-main, .not-found { width: min(1200px, calc(100% - 40px)); min-height: 70vh; margin: auto; padding: clamp(64px, 9vw, 112px) 0; }
 .page-heading { margin-bottom: 64px; }
 .page-heading h1, .prose-main h1, .not-found h1 { max-width: 16ch; font-size: clamp(44px, 6vw, 76px); }
 .page-heading > p:last-child { max-width: 62ch; font-size: 18px; }
-.demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.demo-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+.demo-grid > * { min-width: 0; }
 .workflow-card, .result-card, .license-panel, .team-tools { padding: clamp(24px, 4vw, 48px); background: var(--sheet); border: 1px solid var(--grid); }
 .workflow-card pre { margin: 0; }
 .result-card h2 { font-size: 36px; }
@@ -117,9 +121,10 @@ pre { max-width: 100%; margin: 24px 0 0; padding: 24px; overflow-x: auto; color:
 .demo-command h2 { margin-bottom: 24px; font-size: 36px; }
 .demo-banner { position: relative; z-index: 20; display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 56px; padding: 8px clamp(20px, 5vw, 72px); color: #f2eddf; background: #0d6670; font-size: 13px; }
 .demo-banner div { display: flex; gap: 8px; }
-.demo-banner button { min-height: 40px; padding: 6px 12px; color: #f2eddf; background: transparent; border: 1px solid #f2eddf; cursor: pointer; }
+.demo-banner button { min-height: 44px; padding: 6px 12px; color: #f2eddf; background: transparent; border: 1px solid #f2eddf; cursor: pointer; }
 
 .prose-main { max-width: 780px; }
+.prose-main a { display: inline-flex; min-height: 44px; align-items: center; }
 .prose-main h1 { margin-bottom: 40px; }
 .prose-main h2 { margin-top: 56px; font-size: 32px; }
 .prose-main p { max-width: 68ch; }
@@ -139,6 +144,7 @@ input, textarea { width: 100%; padding: 12px; color: var(--ink); background: var
 
 .site-footer { display: grid; grid-template-columns: 1fr 2fr; gap: 48px; width: min(1440px, 100%); margin: auto; padding: 48px clamp(20px, 5vw, 72px); color: var(--muted); border-top: 1px solid var(--grid); font-size: 13px; }
 .footer-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px 28px; }
+.footer-links a { display: inline-flex; min-width: 44px; min-height: 44px; align-items: center; }
 
 @media (max-width: 800px) {
   .site-header { align-items: flex-start; }

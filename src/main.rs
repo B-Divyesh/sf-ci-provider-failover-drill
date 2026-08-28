@@ -1,5 +1,5 @@
 use anyhow::Result;
-use cifail::{DrillOptions, generate};
+use cifail::{DrillOptions, failure_exit_code, generate};
 use clap::{Parser, Subcommand};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -137,14 +137,6 @@ fn run() -> Result<()> {
 fn main() {
     if let Err(error) = run() {
         eprintln!("cifail: {error:#}");
-        let message = error.to_string();
-        let code = if message.contains("release") || message.contains("not ready") {
-            3
-        } else if message.contains("container drill failed") {
-            4
-        } else {
-            2
-        };
-        std::process::exit(code);
+        std::process::exit(failure_exit_code(&error));
     }
 }

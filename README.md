@@ -75,13 +75,14 @@ are omitted by default. Use `--allow-release` only in a disposable test target.
 Requires Rust 1.85+ and Node 20+.
 
 ```sh
-npm install
+npm ci
 npm test
 npm run build
 ```
 
 `npm run build` compiles the release binary and writes the static site to
-`dist/site/`. `cargo package --allow-dirty` verifies the publishable crate.
+`dist/site/`. The factory deploys that directory as a static site. `cargo
+package --allow-dirty` verifies the publishable crate.
 
 ## Privacy and pricing
 

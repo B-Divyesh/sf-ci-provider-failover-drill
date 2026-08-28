@@ -1,4 +1,4 @@
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_yaml::Value;
@@ -7,6 +7,71 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FailureKind {
+    Input,
+    Safety,
+    Execution,
+}
+
+#[derive(Debug)]
+pub struct DrillFailure {
+    kind: FailureKind,
+    message: String,
+}
+
+impl DrillFailure {
+    fn input(message: impl Into<String>) -> Self {
+        Self {
+            kind: FailureKind::Input,
+            message: message.into(),
+        }
+    }
+
+    fn safety(message: impl Into<String>) -> Self {
+        Self {
+            kind: FailureKind::Safety,
+            message: message.into(),
+        }
+    }
+
+    fn execution(message: impl Into<String>) -> Self {
+        Self {
+            kind: FailureKind::Execution,
+            message: message.into(),
+        }
+    }
+}
+
+impl std::fmt::Display for DrillFailure {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.message.fmt(formatter)
+    }
+}
+
+impl std::error::Error for DrillFailure {}
+
+pub fn failure_exit_code(error: &anyhow::Error) -> i32 {
+    match error
+        .chain()
+        .find_map(|cause| cause.downcast_ref::<DrillFailure>())
+    {
+        Some(DrillFailure {
+            kind: FailureKind::Safety,
+            ..
+        }) => 3,
+        Some(DrillFailure {
+            kind: FailureKind::Execution,
+            ..
+        }) => 4,
+        Some(DrillFailure {
+            kind: FailureKind::Input,
+            ..
+        }) => 2,
+        None => 2,
+    }
+}
 
 #[derive(Debug, Deserialize)]
 struct Workflow {
@@ -236,31 +301,41 @@ fn redact_expressions(
 
 pub fn generate(options: &DrillOptions) -> Result<DrillReport> {
     if !is_pinned_image(&options.image) {
-        bail!("image must include an immutable @sha256: digest with 64 hex characters");
+        return Err(DrillFailure::input(
+            "image must include an immutable @sha256: digest with 64 hex characters",
+        )
+        .into());
     }
     if !options.workflow.is_file() {
-        bail!(
+        return Err(DrillFailure::input(format!(
             "workflow file was not found: {}",
             options.workflow.display()
-        );
+        ))
+        .into());
     }
     if !options.repo.is_dir() {
-        bail!(
+        return Err(DrillFailure::input(format!(
             "repository directory was not found: {}",
             options.repo.display()
-        );
+        ))
+        .into());
     }
 
-    let source = fs::read_to_string(&options.workflow)
-        .with_context(|| format!("could not read {}", options.workflow.display()))?;
-    let workflow: Workflow = serde_yaml::from_str(&source)
-        .with_context(|| format!("{} is not valid workflow YAML", options.workflow.display()))?;
+    let source = fs::read_to_string(&options.workflow).map_err(|_| {
+        DrillFailure::input(format!("could not read {}", options.workflow.display()))
+    })?;
+    let workflow: Workflow = serde_yaml::from_str(&source).map_err(|_| {
+        DrillFailure::input(format!(
+            "{} is not valid workflow YAML",
+            options.workflow.display()
+        ))
+    })?;
     let available = workflow.jobs.keys().cloned().collect::<Vec<_>>().join(", ");
-    let job = workflow.jobs.get(&options.job).with_context(|| {
-        format!(
+    let job = workflow.jobs.get(&options.job).ok_or_else(|| {
+        DrillFailure::input(format!(
             "job '{}' was not found; available jobs: {available}",
             options.job
-        )
+        ))
     })?;
 
     fs::create_dir_all(&options.out)
@@ -389,14 +464,24 @@ pub fn generate(options: &DrillOptions) -> Result<DrillReport> {
 
     if options.execute {
         if !ready {
-            bail!("drill is not ready; fix the warnings in report.md before execution");
+            return Err(DrillFailure::safety(
+                "drill is not ready; fix the warnings in report.md before execution",
+            )
+            .into());
         }
         let docker = Command::new("docker")
             .arg("--version")
             .output()
-            .context("Docker is required for --execute; install Docker or omit --execute")?;
+            .map_err(|_| {
+                DrillFailure::input(
+                    "Docker is required for --execute; install Docker or omit --execute",
+                )
+            })?;
         if !docker.status.success() {
-            bail!("Docker is not available; install Docker or omit --execute");
+            return Err(DrillFailure::input(
+                "Docker is not available; install Docker or omit --execute",
+            )
+            .into());
         }
         let tag = format!(
             "cifail-{}",
@@ -428,7 +513,10 @@ pub fn generate(options: &DrillOptions) -> Result<DrillReport> {
         report.execution_passed = Some(passed);
         write_reports(&options.out, &report, &blocked)?;
         if !passed {
-            bail!("the container drill failed; review its command output and report.md");
+            return Err(DrillFailure::execution(
+                "the container drill failed; review its command output and report.md",
+            )
+            .into());
         }
     }
     Ok(report)

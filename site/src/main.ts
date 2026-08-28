@@ -7,7 +7,7 @@ const VERDICT_KEY = `sb_license_status:${PRODUCT}`;
 const TEAM_DATA_KEY = "team:drills";
 
 type Page = { title: string; description: string; body: string; demo?: boolean };
-type Verdict = { valid: boolean; reason: string; checkedAt: number };
+type Verdict = { valid: boolean; reason: string; checkedAt: number; token: string };
 
 const routeMeta: Record<string, [string, string]> = {
   "/": ["CI Failover Drill — prove one job runs elsewhere", "Turn one GitHub Actions job into a safe, provider-neutral container drill."],
@@ -248,7 +248,7 @@ function terms(): Page {
 }
 
 function team(): Page {
-  const unlocked = getCachedVerdict()?.valid === true;
+  const unlocked = getCachedVerdict(localStorage.getItem(LICENSE_KEY) || undefined)?.valid === true;
   return {
     title: routeMeta["/team"][0], description: routeMeta["/team"][1], body: `
       <main id="main" class="inner-main">
@@ -380,10 +380,12 @@ function renderHistory(): void {
 function bindTeamEvents(): void {
   document.querySelector<HTMLFormElement>("#license-form")?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const token = new FormData(event.currentTarget).get("license")?.toString().trim();
+    const form = event.currentTarget as HTMLFormElement;
+    const token = new FormData(form).get("license")?.toString().trim();
     if (!token) return;
     localStorage.setItem(LICENSE_KEY, token);
-    await verifyLicense(token, true);
+    localStorage.removeItem(VERDICT_KEY);
+    await verifyLicense(token, true, true);
   });
   document.querySelector<HTMLFormElement>("#report-form")?.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -418,15 +420,15 @@ function bindTeamEvents(): void {
   renderHistory();
 }
 
-function getCachedVerdict(): Verdict | null {
+function getCachedVerdict(token?: string): Verdict | null {
   try {
     const verdict = JSON.parse(localStorage.getItem(VERDICT_KEY) || "null") as Verdict | null;
-    return verdict && Date.now() - verdict.checkedAt < 86_400_000 ? verdict : null;
+    return verdict && Date.now() - verdict.checkedAt < 86_400_000 && (!token || verdict.token === token) ? verdict : null;
   } catch { return null; }
 }
 
-async function verifyLicense(token: string, rerender = false): Promise<void> {
-  const cached = getCachedVerdict();
+async function verifyLicense(token: string, rerender = false, force = false): Promise<void> {
+  const cached = force ? null : getCachedVerdict(token);
   if (cached) {
     if (rerender) render();
     return;
@@ -434,7 +436,7 @@ async function verifyLicense(token: string, rerender = false): Promise<void> {
   try {
     const response = await fetch(`${API}/products/${PRODUCT}/verify?license=${encodeURIComponent(token)}`);
     const data = await response.json() as { valid: boolean; reason: string };
-    localStorage.setItem(VERDICT_KEY, JSON.stringify({ valid: data.valid, reason: data.reason, checkedAt: Date.now() }));
+    localStorage.setItem(VERDICT_KEY, JSON.stringify({ valid: data.valid, reason: data.reason, checkedAt: Date.now(), token }));
     if (!data.valid) localStorage.removeItem(LICENSE_KEY);
     if (rerender) {
       render();
