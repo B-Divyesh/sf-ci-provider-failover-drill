@@ -1,0 +1,20 @@
+{
+  "facts": [
+    {
+      "text": "Free local drill",
+      "top": 746.203125,
+      "bottom": 767
+    },
+    {
+      "text": "No secrets stored",
+      "top": 746.203125,
+      "bottom": 767
+    },
+    {
+      "text": "Release steps stay blocked",
+      "top": 775,
+      "bottom": 795.796875
+    }
+  ],
+  "overflow": false
+}

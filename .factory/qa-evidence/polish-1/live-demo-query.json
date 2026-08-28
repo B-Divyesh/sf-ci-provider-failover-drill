@@ -1,0 +1,9 @@
+{
+  "demo": {
+    "url": "https://ci-provider-failover-drill.sociobot.in/?demo=1",
+    "banner": 1,
+    "reset": 1,
+    "install": 1
+  },
+  "facts": []
+}

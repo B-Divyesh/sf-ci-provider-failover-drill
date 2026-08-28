@@ -1,0 +1,54 @@
+[
+  {
+    "route": "/",
+    "status": 200,
+    "title": "CI Provider Failover Drill — test one job",
+    "h1": 1,
+    "seriousOrCritical": 0,
+    "overflow": false
+  },
+  {
+    "route": "/demo",
+    "status": 200,
+    "title": "Demo — CI Provider Failover Drill",
+    "h1": 1,
+    "seriousOrCritical": 0,
+    "overflow": false
+  },
+  {
+    "route": "/team",
+    "status": 200,
+    "title": "Team tools — CI Provider Failover Drill",
+    "h1": 1,
+    "seriousOrCritical": 0,
+    "overflow": false
+  },
+  {
+    "route": "/privacy",
+    "status": 200,
+    "title": "Privacy — CI Provider Failover Drill",
+    "h1": 1,
+    "seriousOrCritical": 0,
+    "overflow": false
+  },
+  {
+    "route": "/terms",
+    "status": 200,
+    "title": "Terms — CI Provider Failover Drill",
+    "h1": 1,
+    "seriousOrCritical": 0,
+    "overflow": false
+  },
+  {
+    "route": "/missing-place",
+    "status": 404,
+    "title": "Page not found — CI Provider Failover Drill",
+    "h1": 1,
+    "seriousOrCritical": 0,
+    "overflow": false
+  },
+  {
+    "route": "/ dark",
+    "seriousOrCritical": 0
+  }
+]

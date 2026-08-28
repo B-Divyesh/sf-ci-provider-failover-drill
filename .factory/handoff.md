@@ -30,5 +30,26 @@ The static deployment directory is `dist/site`. Deploy with:
 /opt/fleet/lib/deploy-static.sh ci-provider-failover-drill dist/site
 ```
 
-The deployed commit, live verification, screenshots, and Lighthouse evidence
-are appended after the deployment check.
+## Deployment and live verification
+
+Commit `5603cd5fa5887b241f7a4483fdcb5d369399a0df` was deployed through the
+static work-order configuration as deployment
+`29ca4110-a525-4131-9a24-3ba8f1fbdeb7`.
+
+- Cold live checks returned 200 for `/`, `/demo`, `/team`, `/privacy`, and
+  `/terms`; `/missing-place` returned 404.
+- `/opt/fleet/lib/verify-url.sh` recorded no console errors, title/lang/main,
+  one h1, and complete image alt text at
+  `.factory/qa-evidence/polish-1/verify.json`.
+- Playwright axe checks on all routes in mobile light mode and landing dark mode
+  found zero serious or critical findings. No checked route overflowed 390 px.
+  See `.factory/qa-evidence/polish-1/live-route-check.json`.
+- Cold `?demo=1` had the persistent sample banner, Reset demo, and View install
+  command. The three landing facts were all inside the 390×844 first viewport.
+  See `.factory/qa-evidence/polish-1/live-demo-query.json` and
+  `.factory/qa-evidence/polish-1/live-first-screen.json`.
+- The locally run axe CLI could not locate a Selenium Chrome binary, but the
+  repository’s Playwright axe suite ran against the installed Playwright
+  Chromium and passed locally and live.
+
+No known product gaps remain.

@@ -30,3 +30,17 @@ review `d5de579f0fbfc61ef06afec149f5403384457001`.
 - `npm run lint`, `npm run build`, and `cargo package --locked --allow-dirty`
   passed. The release site has 7.0 KB gzip JavaScript and 3.8 KB gzip CSS.
 - Local screenshots and live URL evidence are recorded in the handoff after deployment.
+
+## Live re-check
+
+- Deployment `29ca4110-a525-4131-9a24-3ba8f1fbdeb7` reached
+  <https://ci-provider-failover-drill.sociobot.in> from this commit.
+- Cold route checks at `/`, `/demo`, `/team`, `/privacy`, `/terms`, and
+  `/missing-place` found the expected per-route title, one h1, no mobile
+  overflow, and zero axe serious/critical violations. The missing route returned
+  HTTP 404. Evidence: `.factory/qa-evidence/polish-1/live-route-check.json`.
+- `?demo=1` showed the sample banner, Reset demo, and View install command.
+  Evidence: `.factory/qa-evidence/polish-1/live-demo-query.json`.
+- The mobile landing facts fit inside 390×844. Evidence:
+  `.factory/qa-evidence/polish-1/live-first-screen.json` and
+  `.factory/qa-evidence/polish-1/live-landing-mobile-390.png`.
