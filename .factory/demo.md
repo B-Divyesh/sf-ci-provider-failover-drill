@@ -4,10 +4,13 @@
 
 - URL: `https://ci-provider-failover-drill.sociobot.in/demo`
 - Local URL: `http://127.0.0.1:5173/demo` after `npm run dev`
-- Direct entry: `/demo` opens the sample without setup.
+- One-click entry: `/?demo=1` opens the sample without setup.
+- Stable route: `/demo` opens the same isolated sample.
 - Reset: select **Reset demo** in the persistent demo banner.
 - Exit: select **View install command** to reach the install command.
 - Storage namespace: `demo:`. The v1 demo is read-only and creates no keys.
+  Demo startup does not read or verify a stored Team license. Reset and exit
+  clear only `demo:` keys, leaving real browser data unchanged.
 
 The sample is a Node package with a `release-check` job. It has checkout,
 runtime setup, install, test, registry identity, and publish steps. The result

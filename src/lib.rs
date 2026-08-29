@@ -192,70 +192,379 @@ fn shell_env_value(value: &str) -> String {
     }
 }
 
-#[derive(Default)]
+#[derive(Clone, Copy, Default)]
 struct CommandFacts {
     release: bool,
     npm: bool,
     cargo: bool,
     pip: bool,
     docker: bool,
+    network_unknown: bool,
+}
+
+impl CommandFacts {
+    fn merge(&mut self, other: Self) {
+        self.release |= other.release;
+        self.npm |= other.npm;
+        self.cargo |= other.cargo;
+        self.pip |= other.pip;
+        self.docker |= other.docker;
+        self.network_unknown |= other.network_unknown;
+    }
+}
+
+fn is_assignment(word: &str) -> bool {
+    let Some((name, _)) = word.split_once('=') else {
+        return false;
+    };
+    let mut characters = name.chars();
+    matches!(characters.next(), Some(first) if first == '_' || first.is_ascii_alphabetic())
+        && characters.all(|character| character == '_' || character.is_ascii_alphanumeric())
+}
+
+/// Split shell source without evaluating it. Quoted text stays in one word so
+/// `sh -c 'npm publish'` can be inspected recursively. An unfinished quote or
+/// escape returns `None` and is treated as an unsafe, unparseable command.
+fn shell_commands(source: &str) -> Option<Vec<Vec<String>>> {
+    let normalized = source.replace("\\\n", " ");
+    let mut commands = Vec::new();
+    let mut words = Vec::new();
+    let mut word = String::new();
+    let mut quote = None;
+    let mut escaped = false;
+    let mut in_word = false;
+
+    let finish_word = |words: &mut Vec<String>, word: &mut String, in_word: &mut bool| {
+        if *in_word {
+            words.push(std::mem::take(word));
+            *in_word = false;
+        }
+    };
+    let finish_command = |commands: &mut Vec<Vec<String>>, words: &mut Vec<String>| {
+        if !words.is_empty() {
+            commands.push(std::mem::take(words));
+        }
+    };
+
+    for character in normalized.chars() {
+        if escaped {
+            word.push(character);
+            in_word = true;
+            escaped = false;
+            continue;
+        }
+        match quote {
+            Some('\'') => {
+                if character == '\'' {
+                    quote = None;
+                } else {
+                    word.push(character);
+                }
+                in_word = true;
+            }
+            Some('"') => {
+                if character == '"' {
+                    quote = None;
+                } else if character == '\\' {
+                    escaped = true;
+                } else {
+                    word.push(character);
+                }
+                in_word = true;
+            }
+            Some(_) => unreachable!(),
+            None => match character {
+                '\'' | '"' => {
+                    quote = Some(character);
+                    in_word = true;
+                }
+                '\\' => {
+                    escaped = true;
+                    in_word = true;
+                }
+                ' ' | '\t' | '\r' => finish_word(&mut words, &mut word, &mut in_word),
+                '\n' | ';' | '|' | '&' => {
+                    finish_word(&mut words, &mut word, &mut in_word);
+                    finish_command(&mut commands, &mut words);
+                }
+                '(' | ')' => {
+                    finish_word(&mut words, &mut word, &mut in_word);
+                    finish_command(&mut commands, &mut words);
+                }
+                _ => {
+                    word.push(character);
+                    in_word = true;
+                }
+            },
+        }
+    }
+    if escaped || quote.is_some() {
+        return None;
+    }
+    finish_word(&mut words, &mut word, &mut in_word);
+    finish_command(&mut commands, &mut words);
+    Some(commands)
+}
+
+fn executable_name(word: &str) -> String {
+    word.rsplit('/').next().unwrap_or(word).to_ascii_lowercase()
+}
+
+fn unknown_wrapper() -> CommandFacts {
+    // A wrapper whose target cannot be determined is omitted from the packet.
+    // This fail-closed result prevents dynamic or malformed wrappers from
+    // bypassing the explicit release opt-in.
+    CommandFacts {
+        release: true,
+        network_unknown: true,
+        ..CommandFacts::default()
+    }
+}
+
+fn wrapped_target<'a>(words: &'a [String], wrapper: &str) -> Result<&'a [String], ()> {
+    let mut index = 1;
+    while index < words.len() && is_assignment(&words[index]) {
+        index += 1;
+    }
+
+    match wrapper {
+        "env" => {
+            while index < words.len() {
+                let word = words[index].as_str();
+                if word == "--" {
+                    index += 1;
+                    break;
+                }
+                if is_assignment(word) {
+                    index += 1;
+                    continue;
+                }
+                if matches!(word, "-u" | "--unset" | "-C" | "--chdir") {
+                    index += 2;
+                    continue;
+                }
+                if word.starts_with("--unset=") || word.starts_with("--chdir=") {
+                    index += 1;
+                    continue;
+                }
+                if matches!(word, "-i" | "--ignore-environment" | "-0" | "--null") {
+                    index += 1;
+                    continue;
+                }
+                // `env -S` reparses a string using implementation-specific
+                // rules, so it cannot be trusted as a transparent wrapper.
+                if matches!(word, "-S" | "--split-string")
+                    || word.starts_with("--split-string=")
+                    || word.starts_with('-')
+                {
+                    return Err(());
+                }
+                break;
+            }
+        }
+        "command" => {
+            while index < words.len() {
+                match words[index].as_str() {
+                    "--" | "-p" => index += 1,
+                    "-v" | "-V" => return Ok(&[]),
+                    word if word.starts_with('-') => return Err(()),
+                    _ => break,
+                }
+            }
+        }
+        "exec" => {
+            while index < words.len() {
+                match words[index].as_str() {
+                    "--" | "-c" | "-l" => index += 1,
+                    "-a" => index += 2,
+                    word if word.starts_with('-') => return Err(()),
+                    _ => break,
+                }
+            }
+        }
+        "sudo" => {
+            while index < words.len() {
+                let word = words[index].as_str();
+                if word == "--" {
+                    index += 1;
+                    break;
+                }
+                if is_assignment(word) {
+                    index += 1;
+                    continue;
+                }
+                if matches!(
+                    word,
+                    "-u" | "--user"
+                        | "-g"
+                        | "--group"
+                        | "-h"
+                        | "--host"
+                        | "-p"
+                        | "--prompt"
+                        | "-C"
+                        | "--close-from"
+                        | "-r"
+                        | "--role"
+                        | "-t"
+                        | "--type"
+                        | "-T"
+                        | "--command-timeout"
+                        | "-D"
+                        | "--chdir"
+                ) {
+                    index += 2;
+                    continue;
+                }
+                if word.starts_with("--user=")
+                    || word.starts_with("--group=")
+                    || word.starts_with("--host=")
+                    || word.starts_with("--prompt=")
+                    || word.starts_with("--close-from=")
+                    || word.starts_with("--role=")
+                    || word.starts_with("--type=")
+                    || word.starts_with("--command-timeout=")
+                    || word.starts_with("--chdir=")
+                {
+                    index += 1;
+                    continue;
+                }
+                if matches!(
+                    word,
+                    "-A" | "--askpass"
+                        | "-b"
+                        | "--background"
+                        | "-E"
+                        | "--preserve-env"
+                        | "-H"
+                        | "--set-home"
+                        | "-n"
+                        | "--non-interactive"
+                        | "-P"
+                        | "--preserve-groups"
+                        | "-S"
+                        | "--stdin"
+                ) || word.starts_with("--preserve-env=")
+                {
+                    index += 1;
+                    continue;
+                }
+                if word.starts_with('-') {
+                    return Err(());
+                }
+                break;
+            }
+        }
+        _ => return Err(()),
+    }
+
+    if index < words.len() {
+        Ok(&words[index..])
+    } else {
+        Err(())
+    }
+}
+
+fn facts_for_words(words: &[String], depth: usize) -> CommandFacts {
+    if words.is_empty() {
+        return CommandFacts::default();
+    }
+    if depth > 8 {
+        return unknown_wrapper();
+    }
+
+    let mut start = 0;
+    while start < words.len() && is_assignment(&words[start]) {
+        start += 1;
+    }
+    if start == words.len() {
+        return CommandFacts::default();
+    }
+    let words = &words[start..];
+    let executable = executable_name(&words[0]);
+    if executable.contains('$') || executable.contains('`') {
+        return unknown_wrapper();
+    }
+
+    if matches!(executable.as_str(), "env" | "command" | "exec" | "sudo") {
+        return match wrapped_target(words, &executable) {
+            Ok([]) => CommandFacts::default(),
+            Ok(target) => facts_for_words(target, depth + 1),
+            Err(()) => unknown_wrapper(),
+        };
+    }
+
+    if matches!(executable.as_str(), "sh" | "bash" | "dash" | "ksh" | "zsh")
+        && let Some(index) = words.iter().position(|word| word == "-c")
+    {
+        return words
+            .get(index + 1)
+            .map(|source| command_facts_at_depth(source, depth + 1))
+            .unwrap_or_else(unknown_wrapper);
+    }
+    if executable == "eval" {
+        return if words.len() > 1 {
+            command_facts_at_depth(&words[1..].join(" "), depth + 1)
+        } else {
+            unknown_wrapper()
+        };
+    }
+
+    let rest = &words[1..];
+    let has = |word: &str| {
+        rest.iter()
+            .any(|argument| argument.eq_ignore_ascii_case(word))
+    };
+    let npm_publish = (executable == "npm" && (has("publish") || has("pub")))
+        || (executable == "pnpm" && has("publish"))
+        || (executable == "yarn"
+            && rest.len() >= 2
+            && rest[0].eq_ignore_ascii_case("npm")
+            && (rest[1].eq_ignore_ascii_case("publish") || rest[1].eq_ignore_ascii_case("pub")));
+    let release = npm_publish
+        || (executable == "cargo" && has("publish"))
+        || (executable == "docker" && has("push"))
+        || (executable == "gh"
+            && rest.len() >= 2
+            && rest[0].eq_ignore_ascii_case("release")
+            && rest[1].eq_ignore_ascii_case("create"))
+        || (executable == "git"
+            && has("push")
+            && rest
+                .iter()
+                .any(|argument| *argument == "--tags" || *argument == "--follow-tags"))
+        || (executable == "twine" && has("upload"))
+        || (executable == "gem" && has("push"))
+        || (executable == "helm" && has("push"))
+        || (executable == "kubectl" && has("apply"))
+        || (executable == "terraform" && has("apply"));
+
+    CommandFacts {
+        release,
+        npm: matches!(executable.as_str(), "npm" | "npx" | "pnpm" | "yarn"),
+        cargo: executable == "cargo",
+        pip: matches!(executable.as_str(), "pip" | "pip3"),
+        docker: executable == "docker",
+        network_unknown: false,
+    }
+}
+
+fn command_facts_at_depth(command: &str, depth: usize) -> CommandFacts {
+    let Some(commands) = shell_commands(command) else {
+        return unknown_wrapper();
+    };
+    let mut facts = CommandFacts::default();
+    for words in commands {
+        facts.merge(facts_for_words(&words, depth));
+    }
+    facts
 }
 
 /// Read the executable words in each simple shell command. This intentionally
 /// does not execute or expand the shell: it is a conservative inspection pass
 /// used for the packet's safety boundary and report.
 fn command_facts(command: &str) -> CommandFacts {
-    let mut facts = CommandFacts::default();
-    let normalized = command.replace("\\\n", " ");
-    for part in normalized.split(['\n', ';', '|', '&']) {
-        let words = part
-            .split_whitespace()
-            .map(|word| word.trim_matches(|c| matches!(c, '\'' | '\"' | '(' | ')')))
-            .collect::<Vec<_>>();
-        if words.is_empty() {
-            continue;
-        }
-        let executable = words[0]
-            .rsplit('/')
-            .next()
-            .unwrap_or(words[0])
-            .to_ascii_lowercase();
-        let rest = &words[1..];
-        let has = |word: &str| rest.iter().any(|arg| arg.eq_ignore_ascii_case(word));
-        let npm_publish = (executable == "npm" && (has("publish") || has("pub")))
-            || (executable == "pnpm" && has("publish"))
-            || (executable == "yarn"
-                && rest.len() >= 2
-                && rest[0].eq_ignore_ascii_case("npm")
-                && (rest[1].eq_ignore_ascii_case("publish")
-                    || rest[1].eq_ignore_ascii_case("pub")));
-        let release = npm_publish
-            || (executable == "cargo" && has("publish"))
-            || (executable == "docker" && has("push"))
-            || (executable == "gh"
-                && rest.len() >= 2
-                && rest[0] == "release"
-                && rest[1] == "create")
-            || (executable == "git"
-                && has("push")
-                && rest
-                    .iter()
-                    .any(|arg| *arg == "--tags" || *arg == "--follow-tags"))
-            || (executable == "twine" && has("upload"))
-            || (executable == "gem" && has("push"))
-            || (executable == "helm" && has("push"))
-            || (executable == "kubectl" && has("apply"))
-            || (executable == "terraform" && has("apply"));
-        facts.release |= release;
-        facts.npm |= executable == "npm"
-            || executable == "npx"
-            || executable == "pnpm"
-            || executable == "yarn";
-        facts.cargo |= executable == "cargo";
-        facts.pip |= executable == "pip" || executable == "pip3";
-        facts.docker |= executable == "docker";
-    }
-    facts
+    command_facts_at_depth(command, 0)
 }
 
 fn infer_files(command: &str) -> Vec<&'static str> {
@@ -296,6 +605,9 @@ fn infer_hosts(command: &str) -> BTreeSet<String> {
     }
     if facts.docker {
         hosts.insert("container registry (set by image name)".to_string());
+    }
+    if facts.network_unknown {
+        hosts.insert("Unknown (review wrapped or dynamic command)".to_string());
     }
     let url_re = Regex::new(r"https?://([A-Za-z0-9.-]+)").expect("valid host regex");
     for capture in url_re.captures_iter(command) {
@@ -670,7 +982,7 @@ mod tests {
     }
 
     #[test]
-    fn recognizes_release_commands_with_options_aliases_and_continuations() {
+    fn recognizes_release_commands_through_options_wrappers_and_shells() {
         let cases = [
             "npm --access public publish",
             "npm pub",
@@ -681,11 +993,55 @@ mod tests {
             "cargo publish",
             "docker push example/image",
             "gh release create v1",
+            "env npm publish",
+            "/usr/bin/env CI=1 npm --access public publish",
+            "env -i TOKEN=value command -- npm pub",
+            "command npm publish",
+            "exec npm publish",
+            "sudo -u runner npm publish",
+            "sudo --preserve-env=TOKEN env TOKEN=value npm publish",
+            "sh -c 'npm publish'",
+            "bash -c \"env npm publish\"",
+            "eval 'npm publish'",
         ];
         for command in cases {
             assert!(command_facts(command).release, "{command}");
         }
-        let hosts = infer_hosts("npm --access public publish");
-        assert!(hosts.contains("registry.npmjs.org"));
+        for command in [
+            "npm --access public publish",
+            "env npm publish",
+            "command -- npm publish",
+            "exec env CI=1 npm publish",
+            "sudo -u runner npm publish",
+            "sh -c 'npm publish'",
+        ] {
+            assert!(
+                infer_hosts(command).contains("registry.npmjs.org"),
+                "{command}"
+            );
+        }
+    }
+
+    #[test]
+    fn wrapper_inspection_fails_closed_when_the_target_is_unclear() {
+        for command in [
+            "env --split-string='npm publish'",
+            "env --unknown-option npm test",
+            "command --unknown-option npm test",
+            "exec -a",
+            "sudo --unknown-option npm test",
+            "sh -c",
+            "eval",
+            "'unfinished",
+        ] {
+            assert!(command_facts(command).release, "{command}");
+            assert!(
+                infer_hosts(command).contains("Unknown (review wrapped or dynamic command)"),
+                "{command}"
+            );
+        }
+        assert!(!command_facts("env CI=1 npm test").release);
+        assert!(command_facts("env CI=1 npm test").npm);
+        assert!(command_facts("$RELEASE_TOOL publish").release);
     }
 }

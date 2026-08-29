@@ -11,7 +11,7 @@
     "claim": "Release and publish commands stay blocked unless explicitly enabled.",
     "where": "landing facts, boundaries, README, terms",
     "test": "npm run test:claims -- --grep @claim:release-safety",
-    "sandbox": "bundled sample with npm publish; inspect generated run.sh and report.md"
+    "sandbox": "fresh sample variants with direct, option-order, alias, env, command, exec, sudo, nested, and shell-wrapped release commands; inspect blocked and explicitly enabled run.sh output"
   },
   {
     "id": "secret-redaction",
@@ -53,7 +53,7 @@
     "claim": "The demo uses bundled sample data and saves no demo records.",
     "where": "demo banner and README",
     "test": "npm run test:claims -- --grep @claim:demo-sandbox",
-    "sandbox": "fresh browser context at /demo; reset and inspect the demo storage namespace"
+    "sandbox": "fresh browser context; use the landing link to enter /?demo=1, inspect the populated sample, reset demo keys, preserve a real-data sentinel, and leave via View install command"
   },
   {
     "id": "privacy-local",
@@ -71,10 +71,10 @@
   },
   {
     "id": "team-history",
-    "claim": "Team saves drill history in the browser and downloads an organization report template.",
+    "claim": "Team saves drill history in the browser and exports or imports it as JSON.",
     "where": "pricing and Team pages",
     "test": "npm run test:claims -- --grep @claim:team-history",
-    "sandbox": "fresh browser context with a valid cached verdict; save sample JSON and inspect download"
+    "sandbox": "fresh browser context with a valid cached verdict; save a report, export JSON, delete local history, import the JSON, and confirm the same record returns"
   },
   {
     "id": "paid-contract",
@@ -95,7 +95,7 @@
     "claim": "The CLI checks required files, network needs, and GitHub-only actions.",
     "where": "README",
     "test": "npm run test:claims -- --grep @claim:inspection-report",
-    "sandbox": "bundled sample; inspect drill.json and report.md for each category"
+    "sandbox": "fresh sample variants; inspect drill.json and report.md for required files, provider actions, and registry hosts through env, command, exec, sudo, and shell wrappers"
   },
   {
     "id": "exit-codes",

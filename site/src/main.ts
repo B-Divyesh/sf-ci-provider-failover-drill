@@ -42,7 +42,7 @@ function footer(): string {
         <a href="/privacy" data-link>Privacy</a>
         <a href="/terms" data-link>Terms</a>
         <span>Built by Param Factory</span>
-        <span>v0.1.0 · build 2026.08.28</span>
+        <span>v0.1.0 · build 2026.08.29</span>
       </div>
     </footer>`;
 }
@@ -63,8 +63,8 @@ function landing(): Page {
             <h1 id="landing-title" tabindex="-1">Prove one CI job runs elsewhere.</h1>
             <p class="lede">For GitHub Actions maintainers who need one critical job to run during an outage.</p>
             <div class="hero-action">
-              <a class="button primary" href="/demo" data-link>Try it with sample data</a>
-              <span>See a sample packet with one blocked npm publish step.</span>
+              <a class="button primary" href="/?demo=1" data-link>Try it with sample data</a>
+              <span>See a sample five-file drill packet with one blocked npm publish step.</span>
             </div>
             <ul class="plain-facts" aria-label="Product facts">
               <li>Free local drill</li>
@@ -82,7 +82,7 @@ function landing(): Page {
         <section class="preview survey-section" aria-labelledby="preview-title">
           <div class="section-mark"><span>Sample result</span><span>Release check</span></div>
           <div class="section-intro">
-            <p class="eyebrow">The product</p>
+            <p class="eyebrow">Sample drill result</p>
             <h2 id="preview-title">See what the drill catches</h2>
             <p>One command reads one job. It produces a packet for Docker on another runner.</p>
           </div>
@@ -186,7 +186,7 @@ function demo(): Page {
           </div>
           <div class="result-card">
             <div class="section-mark"><span>OUTPUT</span><span>READY</span></div>
-            <h2 id="demo-result">The route is ready to inspect</h2>
+            <h2 id="demo-result">The sample packet is ready to inspect.</h2>
             <dl class="result-list">
               <div><dt>Shell steps</dt><dd>3 included</dd></div>
               <div><dt>Release steps</dt><dd>1 blocked</dd></div>
@@ -210,7 +210,7 @@ function privacy(): Page {
   return {
     title: routeMeta["/privacy"][0], description: routeMeta["/privacy"][1], body: `
       <main id="main" class="prose-main">
-        <p class="eyebrow">Policy / updated 28 August 2026</p>
+        <p class="eyebrow">Policy / updated 29 August 2026</p>
         <h1 tabindex="-1">Your workflow stays on your machine.</h1>
         <p>The free CLI reads local workflow files and writes local packet files. It has no telemetry.</p>
         <h2>Demo data</h2>
@@ -219,7 +219,8 @@ function privacy(): Page {
         <p>Team drill history stays in this browser. You can export, import, or delete it from the Team page.</p>
         <h2>License checks</h2>
         <p>A Team token is stored in this browser. It is sent only to the Sociobot license API for verification.</p>
-        <p>The last verdict is cached for one day. The checkout site handles payment details.</p>
+        <p>The last verdict is cached for one day.</p>
+        <p>Payment opens Sociobot checkout.</p>
         <h2>Contact</h2>
         <p>Email <a href="mailto:privacy@sociobot.in">privacy@sociobot.in</a> for a privacy request.</p>
       </main>`
@@ -230,7 +231,7 @@ function terms(): Page {
   return {
     title: routeMeta["/terms"][0], description: routeMeta["/terms"][1], body: `
       <main id="main" class="prose-main">
-        <p class="eyebrow">Terms / updated 28 August 2026</p>
+        <p class="eyebrow">Terms / updated 29 August 2026</p>
         <h1 tabindex="-1">Use the drill before an outage.</h1>
         <p>The CLI is provided under the MIT License. You remain responsible for commands you execute.</p>
         <h2>Release safety</h2>
@@ -306,8 +307,20 @@ function demoBanner(): string {
   return `<aside class="demo-banner" aria-label="Demo mode"><strong>Demo — sample data, nothing is saved</strong><div><button id="reset-demo">Reset demo</button><button id="start-real">View install command</button></div></aside>`;
 }
 
+function isDemoMode(): boolean {
+  const queryDemo = new URLSearchParams(window.location.search).get("demo") === "1";
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  return queryDemo || path === "/demo";
+}
+
+function clearDemoData(): void {
+  Object.keys(localStorage)
+    .filter((key) => key.startsWith("demo:"))
+    .forEach((key) => localStorage.removeItem(key));
+}
+
 function normalizePath(): string {
-  if (new URLSearchParams(window.location.search).get("demo") === "1") return "/demo";
+  if (isDemoMode()) return "/demo";
   const path = window.location.pathname.replace(/\/+$/, "") || "/";
   return routeMeta[path] ? path : "/404";
 }
@@ -358,11 +371,14 @@ function bindEvents(): void {
     }
   }));
   document.querySelector("#reset-demo")?.addEventListener("click", () => {
-    Object.keys(localStorage).filter((key) => key.startsWith("demo:")).forEach((key) => localStorage.removeItem(key));
+    clearDemoData();
     const button = document.querySelector<HTMLButtonElement>("#reset-demo");
     if (button) button.textContent = "Demo reset";
   });
-  document.querySelector("#start-real")?.addEventListener("click", () => navigate("/#install"));
+  document.querySelector("#start-real")?.addEventListener("click", () => {
+    clearDemoData();
+    navigate("/#install");
+  });
 }
 
 function readHistory(): Array<Record<string, unknown>> {
@@ -481,8 +497,8 @@ function captureLicense(): void {
   history.replaceState({}, "", url.pathname + url.search + url.hash);
 }
 
-captureLicense();
+if (!isDemoMode()) captureLicense();
 render();
-const existingToken = localStorage.getItem(LICENSE_KEY);
+const existingToken = isDemoMode() ? null : localStorage.getItem(LICENSE_KEY);
 if (existingToken) void verifyLicense(existingToken, true);
 window.addEventListener("popstate", () => render(true));

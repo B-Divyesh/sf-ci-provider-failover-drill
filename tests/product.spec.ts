@@ -42,12 +42,27 @@ test("@claim:inspection-report records required files, network hosts, and provid
   expect(markdown).toContain("### Required paths");
   expect(markdown).toContain("### Network hosts");
   expect(markdown).toContain("### Provider assumptions");
-  const variant = mkdtempSync(join(tmpdir(), "cifail-npm-options-"));
-  cpSync(sample, join(variant, "repo"), { recursive: true });
-  const workflow = join(variant, "repo/.github/workflows/release.yml");
-  writeFileSync(workflow, readFileSync(workflow, "utf8").replace("npm publish", "npm --access public publish"));
-  const stdout = execFileSync(binary, ["drill", "--workflow", workflow, "--job", "release-check", "--image", image, "--repo", join(variant, "repo"), "--out", join(variant, "packet"), "--json"], { encoding: "utf8" });
-  expect(JSON.parse(stdout).network_hosts).toContain("registry.npmjs.org");
+  for (const command of [
+    "npm --access public publish",
+    "env npm publish",
+    "env CI=release command npm pub",
+    "exec npm publish",
+    "sudo -u runner npm publish",
+    "sh -c 'npm publish'"
+  ]) {
+    const variant = mkdtempSync(join(tmpdir(), "cifail-network-form-"));
+    cpSync(sample, join(variant, "repo"), { recursive: true });
+    const workflow = join(variant, "repo/.github/workflows/release.yml");
+    const source = readFileSync(workflow, "utf8")
+      .replace("run: npm ci", "run: echo install")
+      .replace("run: npm test", "run: echo test")
+      .replace("run: npm whoami", "run: echo identity")
+      .replace("run: npm publish", `run: ${command}`);
+    writeFileSync(workflow, source);
+    const stdout = execFileSync(binary, ["drill", "--workflow", workflow, "--job", "release-check", "--image", image, "--repo", join(variant, "repo"), "--out", join(variant, "packet"), "--json"], { encoding: "utf8" });
+    expect(JSON.parse(stdout).network_hosts, command).toContain("registry.npmjs.org");
+    expect(readFileSync(join(variant, "packet/report.md"), "utf8"), command).toContain("registry.npmjs.org");
+  }
 });
 
 test("@claim:release-safety blocks publish commands by default", () => {
@@ -55,7 +70,26 @@ test("@claim:release-safety blocks publish commands by default", () => {
   expect(report.commands_blocked).toBe(1);
   expect(readFileSync(join(output, "run.sh"), "utf8")).not.toContain("npm publish");
   expect(readFileSync(join(output, "report.md"), "utf8")).toContain("Publish package");
-  for (const command of ["npm --access public publish", "npm pub", "pnpm publish", "yarn npm publish", "git push --tags", "cargo publish", "docker push example/image", "gh release create v1"]) {
+  for (const command of [
+    "npm --access public publish",
+    "npm pub",
+    "pnpm publish",
+    "yarn npm publish",
+    "git push --tags",
+    "cargo publish",
+    "docker push example/image",
+    "gh release create v1",
+    "env npm publish",
+    "/usr/bin/env CI=release npm --access public publish",
+    "env -i TOKEN=value command -- npm pub",
+    "command npm publish",
+    "exec npm publish",
+    "sudo -u runner npm publish",
+    "sudo --preserve-env=TOKEN env TOKEN=value npm publish",
+    "sh -c 'npm publish'",
+    "bash -c 'env npm publish'",
+    "eval 'npm publish'"
+  ]) {
     const root = mkdtempSync(join(tmpdir(), "cifail-release-form-"));
     cpSync(sample, join(root, "repo"), { recursive: true });
     const workflow = join(root, "repo/.github/workflows/release.yml");
@@ -114,7 +148,7 @@ test("@claim:cli-demo-isolation keeps the caller directory unchanged and matches
   const caller = mkdtempSync(join(tmpdir(), "cifail-demo-caller-"));
   writeFileSync(join(caller, "sentinel.txt"), "unchanged");
   const before = readdirSync(caller);
-  const stdout = execFileSync(binary, ["demo", "--json"], { encoding: "utf8", cwd: caller });
+  const stdout = execFileSync("cargo", ["run", "--quiet", "--locked", "--manifest-path", join(process.cwd(), "Cargo.toml"), "--", "demo", "--json"], { encoding: "utf8", cwd: caller });
   const report = JSON.parse(stdout);
   expect(readdirSync(caller)).toEqual(before);
   expect(report.job).toBe("release-check");
@@ -149,13 +183,42 @@ test("@claim:no-ci-mutation leaves the source repository unchanged", () => {
   expect(readFileSync(join(repo, ".github/workflows/release.yml"), "utf8") + readFileSync(join(repo, "package.json"), "utf8")).toBe(before);
 });
 
-test("@claim:demo-sandbox opens sample data and stores no demo records", async ({ page }) => {
+test("@claim:demo-sandbox opens sample data without reading or changing real browser data", async ({ context, page }) => {
+  let licenseRequests = 0;
+  await context.addInitScript(() => {
+    localStorage.setItem("sb_license:ci-provider-failover-drill", "real-license");
+    localStorage.setItem("sb_license_status:ci-provider-failover-drill", JSON.stringify({ valid: true, reason: "ok", checkedAt: 0, token: "real-license" }));
+  });
+  await page.route("https://api.sociobot.in/**", async (route) => {
+    licenseRequests += 1;
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ valid: true, reason: "ok" }) });
+  });
   await page.goto("/?demo=1");
   await expect(page.getByText("Demo — sample data, nothing is saved", { exact: true })).toBeVisible();
+  expect(licenseRequests).toBe(0);
+  await page.goto("/");
+  await expect.poll(() => licenseRequests).toBe(1);
+  await expect(page.getByRole("link", { name: "Try it with sample data" })).toHaveAttribute("href", "/?demo=1");
+  await page.getByRole("link", { name: "Try it with sample data" }).click();
+  await expect(page).toHaveURL(/\?demo=1$/);
+  await expect(page.getByText("Demo — sample data, nothing is saved", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "The sample packet is ready to inspect." })).toBeVisible();
   await expect(page.getByText("3 included", { exact: true })).toBeVisible();
+  await page.evaluate(() => {
+    localStorage.setItem("demo:test", "remove-me");
+    localStorage.setItem("cifail:real-test", "keep-me");
+  });
   await page.getByRole("button", { name: "Reset demo" }).click();
   const demoKeys = await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith("demo:")));
   expect(demoKeys).toEqual([]);
+  expect(await page.evaluate(() => localStorage.getItem("cifail:real-test"))).toBe("keep-me");
+  expect(await page.evaluate(() => localStorage.getItem("sb_license:ci-provider-failover-drill"))).toBe("real-license");
+  expect(licenseRequests).toBe(1);
+  await page.evaluate(() => localStorage.setItem("demo:exit-test", "remove-me"));
+  await page.getByRole("button", { name: "View install command" }).click();
+  await expect(page).toHaveURL(/\/#install$/);
+  await expect(page.getByRole("heading", { name: "Run the first drill" })).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("demo:exit-test"))).toBeNull();
 });
 
 test("@claim:privacy-local demo flow makes only same-origin requests", async ({ page }) => {
@@ -175,19 +238,31 @@ test("@claim:paid-license verifies a returned Team token", async ({ page }) => {
   expect(await page.evaluate(() => localStorage.getItem("sb_license:ci-provider-failover-drill"))).toBe("claim-test-token");
 });
 
-test("@claim:license-verdict-cache reuses only a matching verdict for one day", async ({ context, page }) => {
-  let requests = 0;
-  await context.addInitScript(() => {
-    localStorage.setItem("sb_license:ci-provider-failover-drill", "cached-token");
-    localStorage.setItem("sb_license_status:ci-provider-failover-drill", JSON.stringify({ valid: true, reason: "ok", checkedAt: Date.now() - 60_000, token: "cached-token" }));
-  });
+test("@claim:license-verdict-cache reuses only a matching verdict for less than one day", async ({ page }) => {
+  const requestedTokens: string[] = [];
   await page.route("https://api.sociobot.in/**", async (route) => {
-    requests += 1;
+    requestedTokens.push(new URL(route.request().url()).searchParams.get("license") || "");
     await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ valid: true, reason: "ok" }) });
   });
   await page.goto("/team");
+  await page.evaluate(() => {
+    localStorage.setItem("sb_license:ci-provider-failover-drill", "cached-token");
+    localStorage.setItem("sb_license_status:ci-provider-failover-drill", JSON.stringify({ valid: true, reason: "ok", checkedAt: Date.now() - 60_000, token: "cached-token" }));
+  });
+  await page.reload();
   await expect(page.getByRole("heading", { name: "Local organization log" })).toBeVisible();
-  expect(requests).toBe(0);
+  expect(requestedTokens).toEqual([]);
+  await page.evaluate(() => {
+    localStorage.setItem("sb_license_status:ci-provider-failover-drill", JSON.stringify({ valid: true, reason: "ok", checkedAt: Date.now() - 86_400_001, token: "cached-token" }));
+  });
+  await page.reload();
+  await expect.poll(() => requestedTokens).toEqual(["cached-token"]);
+  await page.evaluate(() => {
+    localStorage.setItem("sb_license:ci-provider-failover-drill", "replacement-token");
+    localStorage.setItem("sb_license_status:ci-provider-failover-drill", JSON.stringify({ valid: true, reason: "ok", checkedAt: Date.now(), token: "cached-token" }));
+  });
+  await page.reload();
+  await expect.poll(() => requestedTokens).toEqual(["cached-token", "replacement-token"]);
 });
 
 test("replacing an invalid license token always verifies the replacement", async ({ page }) => {
@@ -235,6 +310,16 @@ test("@claim:paid-contract shows the price and free-core boundary", async ({ pag
   await page.goto("/terms");
   await expect(page.locator("main")).toContainText("Team costs $49 as a one-time purchase. It covers the browser tools shown on the Team page.");
   await expect(page.getByText(/future v1 updates/i)).toHaveCount(0);
+});
+
+test("round-three copy uses defined packet terms and observable checkout wording", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("See a sample five-file drill packet with one blocked npm publish step.")).toBeVisible();
+  await expect(page.getByText("Sample drill result", { exact: true })).toBeVisible();
+  await expect(page.getByText("The product", { exact: true })).toHaveCount(0);
+  await page.goto("/privacy");
+  await expect(page.getByText("Payment opens Sociobot checkout.", { exact: true })).toBeVisible();
+  await expect(page.getByText(/checkout site handles payment details/i)).toHaveCount(0);
 });
 
 test("@claim:exit-codes assigns input, safety, and execution failures documented codes", () => {
@@ -315,10 +400,24 @@ test("static deployment keeps routes real and hashed assets immutable", () => {
   expect(config.navigationFallback).toBeUndefined();
   expect(config.responseOverrides["404"].rewrite).toBe("/404.html");
   expect(config.routes).toContainEqual({ route: "/assets/*", headers: { "Cache-Control": "public, max-age=31536000, immutable" } });
-  for (const route of ["demo", "team", "privacy", "terms"]) {
-    expect(existsSync(join(process.cwd(), "dist/site", route, "index.html"))).toBe(true);
-    const html = readFileSync(join(process.cwd(), "dist/site", route, "index.html"), "utf8");
+  const metadata: Record<string, [string, string]> = {
+    demo: ["Demo — CI Provider Failover Drill", "See a sample release-check job become a failover packet."],
+    team: ["Team tools — CI Provider Failover Drill", "Restore a Team license and keep local drill history."],
+    privacy: ["Privacy — CI Provider Failover Drill", "How CI Provider Failover Drill handles workflows, reports, and licenses."],
+    terms: ["Terms — CI Provider Failover Drill", "Terms for the free CLI and one-time Team license."],
+    "404": ["Page not found — CI Provider Failover Drill", "Return to CI Provider Failover Drill."]
+  };
+  for (const [route, [title, description]] of Object.entries(metadata)) {
+    const file = route === "404" ? join(process.cwd(), "dist/site/404.html") : join(process.cwd(), "dist/site", route, "index.html");
+    expect(existsSync(file)).toBe(true);
+    const html = readFileSync(file, "utf8");
+    expect(html).toContain(`<title>${title}</title>`);
+    expect(html).toContain(`<meta name="description" content="${description}"`);
     expect(html).toContain(`<link rel="canonical" href="https://ci-provider-failover-drill.sociobot.in/${route}"`);
+    expect(html).toContain(`<meta property="og:title" content="${title}"`);
+    expect(html).toContain(`<meta property="og:description" content="${description}"`);
+    expect(html).toContain(`<meta name="twitter:title" content="${title}"`);
+    expect(html).toContain(`<meta name="twitter:description" content="${description}"`);
     expect(html).not.toContain("Prove your CI escape route");
   }
 });

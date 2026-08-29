@@ -21,8 +21,8 @@ cargo run -- demo
 
 The command copies a sample repository to a new temporary directory, analyzes
 its `release-check` job, and prints the packet path. Nothing touches your repo.
-The website recording uses the same bundled sample. Open `/demo` on the live
-site or run `npm run dev` and visit `http://localhost:5173/demo`.
+The website recording uses the same bundled sample. Open `/?demo=1` on the live
+site or run `npm run dev` and visit `http://localhost:5173/?demo=1`.
 
 ## Install
 
@@ -68,6 +68,8 @@ script output.
 
 Release commands such as `npm publish`, `docker push`, and `gh release create`
 are omitted by default. Use `--allow-release` only in a disposable test target.
+The scan unwraps `env`, `command`, `exec`, `sudo`, and shell `-c` prefixes.
+Unclear dynamic wrappers are omitted for review.
 
 ## Develop and verify
 

@@ -1,1 +1,1 @@
-Prove one GitHub Actions job runs on another Docker runner.
+Prove one GitHub Actions job runs on an independent Docker runner.
