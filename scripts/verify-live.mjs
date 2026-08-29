@@ -4,7 +4,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
 const base = (process.argv[2] || "https://ci-provider-failover-drill.sociobot.in").replace(/\/$/, "");
-const evidence = resolve(process.argv[3] || ".factory/qa-evidence/polish-2");
+const evidence = resolve(process.argv[3] || ".factory/qa-evidence/polish-3");
 await mkdir(evidence, { recursive: true });
 
 function check(condition, message) {
@@ -18,6 +18,14 @@ const expected = {
   "/privacy": "Privacy — CI Provider Failover Drill",
   "/terms": "Terms — CI Provider Failover Drill",
   "/missing-place": "Page not found — CI Provider Failover Drill"
+};
+const descriptions = {
+  "/": "Turn one GitHub Actions job into a provider-neutral container drill.",
+  "/demo": "See a sample release-check job become a failover packet.",
+  "/team": "Restore a Team license and keep local drill history.",
+  "/privacy": "How CI Provider Failover Drill handles workflows, reports, and licenses.",
+  "/terms": "Terms for the free CLI and one-time Team license.",
+  "/missing-place": "Return to CI Provider Failover Drill."
 };
 const report = { base, checkedAt: new Date().toISOString(), routes: {}, demo: {}, mobile: {}, navigation: {}, links: {}, errors: [] };
 const browser = await chromium.launch();
@@ -62,9 +70,12 @@ for (const [route, title] of Object.entries(expected)) {
     const titleEscaped = title.replaceAll("&", "&amp;");
     const checks = {
       title: html.includes(`<title>${titleEscaped}</title>`),
+      description: html.includes(`<meta name="description" content="${descriptions[route]}"`),
       canonical: html.includes(`<link rel="canonical" href="${base}${canonicalPath}"`),
       openGraph: html.includes(`<meta property="og:title" content="${titleEscaped}"`),
+      openGraphDescription: html.includes(`<meta property="og:description" content="${descriptions[route]}"`),
       twitter: html.includes(`<meta name="twitter:title" content="${titleEscaped}"`),
+      twitterDescription: html.includes(`<meta name="twitter:description" content="${descriptions[route]}"`),
       cspHeader: Boolean(response.headers()["content-security-policy"]),
       noSniff: response.headers()["x-content-type-options"] === "nosniff"
     };
@@ -76,23 +87,35 @@ for (const [route, title] of Object.entries(expected)) {
 
 {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await context.addInitScript(() => {
+    localStorage.setItem("demo:live-reset", "remove-me");
+    localStorage.setItem("cifail:live-real", "keep-me");
+    localStorage.setItem("sb_license:ci-provider-failover-drill", "live-real-license");
+    localStorage.setItem("sb_license_status:ci-provider-failover-drill", JSON.stringify({ valid: true, reason: "ok", checkedAt: 0, token: "live-real-license" }));
+  });
   const page = await context.newPage();
   const origins = new Set();
   page.on("request", (req) => origins.add(new URL(req.url()).origin));
   await page.goto(`${base}/?demo=1`, { waitUntil: "networkidle" });
   check(await page.getByText("Demo — sample data, nothing is saved", { exact: true }).isVisible(), "query demo banner missing");
+  check(await page.getByRole("heading", { name: "The sample packet is ready to inspect." }).isVisible(), "query demo result heading missing");
   check(await page.getByText("3 included", { exact: true }).isVisible(), "query demo sample missing");
   await page.getByRole("button", { name: "Reset demo" }).click();
   const demoKeys = await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith("demo:")));
+  const realData = await page.evaluate(() => ({
+    sentinel: localStorage.getItem("cifail:live-real"),
+    license: localStorage.getItem("sb_license:ci-provider-failover-drill")
+  }));
   const controls = await page.locator(".demo-banner button").evaluateAll((nodes) => nodes.map((node) => {
     const box = node.getBoundingClientRect();
     return { label: node.textContent?.trim(), width: box.width, height: box.height };
   }));
   check(demoKeys.length === 0, "query demo wrote demo storage");
+  check(realData.sentinel === "keep-me" && realData.license === "live-real-license", "query demo changed real browser data");
   check(controls.every((item) => item.width >= 44 && item.height >= 44), "query demo has a small touch target");
   check([...origins].every((origin) => origin === new URL(base).origin), "query demo contacted another origin");
   await page.screenshot({ path: resolve(evidence, "live-demo-mobile-390.png"), fullPage: true });
-  report.demo = { banner: true, sample: "3 included / 1 blocked / 1 anonymous", demoKeys, controls, requestOrigins: [...origins] };
+  report.demo = { banner: true, sample: "3 included / 1 blocked / 1 anonymous", demoKeys, realDataPreserved: true, controls, requestOrigins: [...origins] };
   await context.close();
 }
 
@@ -100,6 +123,8 @@ for (const [route, title] of Object.entries(expected)) {
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
   await page.goto(`${base}/?cold=${Date.now()}`, { waitUntil: "networkidle" });
+  check(await page.getByRole("link", { name: "Try it with sample data" }).getAttribute("href") === "/?demo=1", "landing action does not use the query demo entry");
+  check(await page.getByText("See a sample five-file drill packet with one blocked npm publish step.").isVisible(), "first-screen packet definition is missing");
   const firstScreen = {};
   for (const label of ["Try it with sample data", "Free local drill", "No secrets stored", "Release steps stay blocked"]) {
     const box = await page.getByText(label, { exact: true }).boundingBox();
@@ -109,6 +134,18 @@ for (const [route, title] of Object.entries(expected)) {
   await page.screenshot({ path: resolve(evidence, "live-landing-mobile-390.png"), fullPage: false });
   report.mobile = { viewport: "390x844", firstScreen, overflow: await page.evaluate(() => document.documentElement.scrollWidth > innerWidth) };
   check(!report.mobile.overflow, "mobile landing overflows horizontally");
+  await context.close();
+}
+
+{
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto(`${base}/privacy?cold=${Date.now()}`, { waitUntil: "networkidle" });
+  const text = await page.locator("main").innerText();
+  check(text.includes("Payment opens Sociobot checkout."), "observable checkout wording is absent from Privacy");
+  check(!text.includes("The checkout site handles payment details."), "unregistered payment-data statement remains live");
+  await page.screenshot({ path: resolve(evidence, "live-privacy-desktop.png"), fullPage: true });
+  report.privacy = { checkoutWording: true, paymentDataClaimAbsent: true };
   await context.close();
 }
 
