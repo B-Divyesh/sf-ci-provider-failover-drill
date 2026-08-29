@@ -48,7 +48,12 @@ test("@claim:inspection-report records required files, network hosts, and provid
     "env CI=release command npm pub",
     "exec npm publish",
     "sudo -u runner npm publish",
-    "sh -c 'npm publish'"
+    "nohup npm publish",
+    "nice -5 npm publish",
+    "time npm publish",
+    "timeout 30 npm publish",
+    "sh -c 'npm publish'",
+    "bash -lc 'npm publish'"
   ]) {
     const variant = mkdtempSync(join(tmpdir(), "cifail-network-form-"));
     cpSync(sample, join(variant, "repo"), { recursive: true });
@@ -86,8 +91,14 @@ test("@claim:release-safety blocks publish commands by default", () => {
     "exec npm publish",
     "sudo -u runner npm publish",
     "sudo --preserve-env=TOKEN env TOKEN=value npm publish",
+    "nohup npm publish",
+    "nice -n 5 npm publish",
+    "time -p npm publish",
+    "timeout --signal=TERM 30 npm publish",
     "sh -c 'npm publish'",
     "bash -c 'env npm publish'",
+    "bash -lc 'env npm publish'",
+    "dash -ec 'npm publish'",
     "eval 'npm publish'"
   ]) {
     const root = mkdtempSync(join(tmpdir(), "cifail-release-form-"));

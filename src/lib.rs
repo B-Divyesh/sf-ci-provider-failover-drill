@@ -455,6 +455,94 @@ fn wrapped_target<'a>(words: &'a [String], wrapper: &str) -> Result<&'a [String]
                 break;
             }
         }
+        "nohup" => {
+            if words.get(index).is_some_and(|word| word == "--") {
+                index += 1;
+            } else if words.get(index).is_some_and(|word| word.starts_with('-')) {
+                return Err(());
+            }
+        }
+        "nice" => {
+            while index < words.len() {
+                let word = words[index].as_str();
+                if word == "--" {
+                    index += 1;
+                    break;
+                }
+                if matches!(word, "-n" | "--adjustment") {
+                    index += 2;
+                    continue;
+                }
+                if word.starts_with("--adjustment=")
+                    || (word.starts_with('-')
+                        && word.len() > 1
+                        && word[1..]
+                            .chars()
+                            .all(|character| character.is_ascii_digit()))
+                {
+                    index += 1;
+                    continue;
+                }
+                if word.starts_with('-') {
+                    return Err(());
+                }
+                break;
+            }
+        }
+        "time" => {
+            while index < words.len() {
+                let word = words[index].as_str();
+                if word == "--" {
+                    index += 1;
+                    break;
+                }
+                if matches!(word, "-f" | "--format" | "-o" | "--output") {
+                    index += 2;
+                    continue;
+                }
+                if matches!(
+                    word,
+                    "-a" | "--append" | "-p" | "--portability" | "--quiet" | "-v" | "--verbose"
+                ) || word.starts_with("--format=")
+                    || word.starts_with("--output=")
+                {
+                    index += 1;
+                    continue;
+                }
+                if word.starts_with('-') {
+                    return Err(());
+                }
+                break;
+            }
+        }
+        "timeout" => {
+            while index < words.len() {
+                let word = words[index].as_str();
+                if word == "--" {
+                    index += 1;
+                    break;
+                }
+                if matches!(word, "-k" | "--kill-after" | "-s" | "--signal") {
+                    index += 2;
+                    continue;
+                }
+                if matches!(
+                    word,
+                    "--preserve-status" | "--foreground" | "-v" | "--verbose"
+                ) || word.starts_with("--kill-after=")
+                    || word.starts_with("--signal=")
+                {
+                    index += 1;
+                    continue;
+                }
+                if word.starts_with('-') {
+                    return Err(());
+                }
+                break;
+            }
+            // The first non-option is timeout's duration, not its target.
+            index += 1;
+        }
         _ => return Err(()),
     }
 
@@ -486,7 +574,10 @@ fn facts_for_words(words: &[String], depth: usize) -> CommandFacts {
         return unknown_wrapper();
     }
 
-    if matches!(executable.as_str(), "env" | "command" | "exec" | "sudo") {
+    if matches!(
+        executable.as_str(),
+        "env" | "command" | "exec" | "sudo" | "nohup" | "nice" | "time" | "timeout"
+    ) {
         return match wrapped_target(words, &executable) {
             Ok([]) => CommandFacts::default(),
             Ok(target) => facts_for_words(target, depth + 1),
@@ -494,13 +585,47 @@ fn facts_for_words(words: &[String], depth: usize) -> CommandFacts {
         };
     }
 
-    if matches!(executable.as_str(), "sh" | "bash" | "dash" | "ksh" | "zsh")
-        && let Some(index) = words.iter().position(|word| word == "-c")
-    {
-        return words
-            .get(index + 1)
-            .map(|source| command_facts_at_depth(source, depth + 1))
-            .unwrap_or_else(unknown_wrapper);
+    if matches!(executable.as_str(), "sh" | "bash" | "dash" | "ksh" | "zsh") {
+        let command_index = words.iter().enumerate().skip(1).find_map(|(index, word)| {
+            let grouped_short_flags = word
+                .strip_prefix('-')
+                .filter(|flags| !flags.starts_with('-') && flags.len() > 1)
+                .is_some_and(|flags| {
+                    flags.contains('c')
+                        && flags.chars().all(|flag| {
+                            matches!(
+                                flag,
+                                'a' | 'b'
+                                    | 'c'
+                                    | 'e'
+                                    | 'f'
+                                    | 'h'
+                                    | 'k'
+                                    | 'l'
+                                    | 'm'
+                                    | 'n'
+                                    | 'p'
+                                    | 't'
+                                    | 'u'
+                                    | 'v'
+                                    | 'x'
+                                    | 'B'
+                                    | 'C'
+                                    | 'E'
+                                    | 'H'
+                                    | 'P'
+                                    | 'T'
+                            )
+                        })
+                });
+            (word == "-c" || grouped_short_flags).then_some(index + 1)
+        });
+        if let Some(index) = command_index {
+            return words
+                .get(index)
+                .map(|source| command_facts_at_depth(source, depth + 1))
+                .unwrap_or_else(unknown_wrapper);
+        }
     }
     if executable == "eval" {
         return if words.len() > 1 {
@@ -988,7 +1113,7 @@ mod tests {
             "npm pub",
             "pnpm publish",
             "yarn npm publish",
-            "npm --access public \\\n+ publish",
+            "npm --access public \\\npublish",
             "git push --tags",
             "cargo publish",
             "docker push example/image",
@@ -1000,8 +1125,14 @@ mod tests {
             "exec npm publish",
             "sudo -u runner npm publish",
             "sudo --preserve-env=TOKEN env TOKEN=value npm publish",
+            "nohup npm publish",
+            "nice -n 5 npm publish",
+            "time -p npm publish",
+            "timeout --signal=TERM 30 npm publish",
             "sh -c 'npm publish'",
             "bash -c \"env npm publish\"",
+            "bash -lc \"env npm publish\"",
+            "dash -ec 'npm publish'",
             "eval 'npm publish'",
         ];
         for command in cases {
@@ -1013,7 +1144,12 @@ mod tests {
             "command -- npm publish",
             "exec env CI=1 npm publish",
             "sudo -u runner npm publish",
+            "nohup npm publish",
+            "nice -5 npm publish",
+            "time npm publish",
+            "timeout 30 npm publish",
             "sh -c 'npm publish'",
+            "bash -lc 'npm publish'",
         ] {
             assert!(
                 infer_hosts(command).contains("registry.npmjs.org"),
