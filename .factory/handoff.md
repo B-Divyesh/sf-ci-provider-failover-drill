@@ -33,6 +33,11 @@ demo/real-data isolation.
 
 Production: <https://ci-provider-failover-drill.sociobot.in>
 
+Static deployment `c8c116bd-74e3-4566-aab5-7e917841cedb` published pushed
+commit `a7e78341485d8e8892ffd65f2ed2caee0d66c534`. The final cold audit completed
+at 29 August 2026 02:50 UTC. Local and live HTML, JavaScript, and CSS hashes
+match byte for byte.
+
 - Cold route and finding checks:
   `.factory/qa-evidence/polish-3/live-route-check.json`
 - Landing and query-demo mobile screenshots:
@@ -43,8 +48,8 @@ Production: <https://ci-provider-failover-drill.sociobot.in>
   `.factory/qa-evidence/polish-3/live-terms-desktop.png`
 - Factory URL check: no console errors or baseline accessibility defects;
   `.factory/qa-evidence/polish-3/verify.json`
-- Lighthouse mobile: Performance 99, Accessibility 100, Best Practices 100,
-  SEO 100; LCP 1.6 s, CLS 0, total blocking time 70 ms;
+- Lighthouse mobile: Performance 100, Accessibility 100, Best Practices 100,
+  SEO 100; LCP 1.5 s, CLS 0, total blocking time 60 ms;
   `.factory/qa-evidence/polish-3/lighthouse-mobile.json`
 
 The live route report verifies route-specific raw and rendered metadata,

@@ -45,6 +45,9 @@ Clean clone: `/tmp/cifail-polish3-clean-jPKHe4` at repair commit `efe9fd0`.
 
 ## Live verification
 
+- Deployment `c8c116bd-74e3-4566-aab5-7e917841cedb` published pushed commit
+  `a7e78341485d8e8892ffd65f2ed2caee0d66c534` through the static work-order
+  configuration. The final cold audit completed at 29 August 2026 02:50 UTC.
 - Cold checks cover `/`, `/?demo=1`, `/demo`, `/team`, `/privacy`, `/terms`,
   and `/missing-place` at
   <https://ci-provider-failover-drill.sociobot.in>.
@@ -53,10 +56,10 @@ Clean clone: `/tmp/cifail-polish3-clean-jPKHe4` at repair commit `efe9fd0`.
   or critical axe violations.
 - The query demo preserves real browser data, clears `demo:` keys, makes only
   same-origin requests, and keeps 44 px controls.
-- Lighthouse mobile: Performance 99, Accessibility 100, Best Practices 100,
-  SEO 100; LCP 1.6 s, CLS 0, total blocking time 70 ms. Evidence:
+- Lighthouse mobile: Performance 100, Accessibility 100, Best Practices 100,
+  SEO 100; LCP 1.5 s, CLS 0, total blocking time 60 ms. Evidence:
   [`lighthouse-mobile.json`](qa-evidence/polish-3/lighthouse-mobile.json).
-- Factory URL verification passed in 586 ms with no console, title, language,
+- Factory URL verification passed in 623 ms with no console, title, language,
   landmark, alt-text, or button-label defect. Evidence:
   [`verify.json`](qa-evidence/polish-3/verify.json).
 
