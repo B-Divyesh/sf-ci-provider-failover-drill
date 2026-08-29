@@ -1,68 +1,35 @@
-# Polish 2 handoff
+# Review 3 handoff
 
 ## Result
 
-PASS. Every finding in `.factory/review-1.md` and `.factory/review-2.md` is
-closed. The production site is deployed at
-<https://ci-provider-failover-drill.sociobot.in>.
+FAIL. The review reopens F-1-1 and F-1-2 as blocking findings. A valid
+`env npm publish` workflow step is emitted into `run.sh` without
+`--allow-release`; when it is the only npm command, the report also says there
+are no network hosts.
 
-The round-2 defect was an unbounded Team entitlement. Terms now say, “It covers
-the browser tools shown on the Team page.” `@claim:paid-contract` asserts that
-scope and rejects the removed “future v1 updates” promise. A cumulative audit
-also finished F-1-12 by standardizing CLI help, reports, the recording, demo
-docs, and claims on **job name**, **anonymous input**, and **GitHub-only action**.
+No product code was changed. The completed review is in
+`.factory/review-3.md`.
 
-## Exact verification evidence
+## Verification performed
 
-- Repair commit deployed: `f721ea11335f4a6cc5435aa27b5903c9389482b7`.
-- Azure Static Web Apps deployment:
-  `45fb8fc1-6e03-40cf-a09f-9d28bb3dc669`.
-- Clean clone: `/tmp/cifail-final-CX8AwL`, cloned from `origin/main` at the
-  repair commit. `npm ci` reported 0 vulnerabilities.
-- Every one of the 16 claim commands in `.factory/claims.json` ran separately
-  and passed: `packet-generation`, `release-safety`, `secret-redaction`,
-  `offline-generation`, `local-privacy`, `cli-demo-isolation`,
-  `no-ci-mutation`, `demo-sandbox`, `privacy-local`, `paid-license`,
-  `team-history`, `paid-contract`, `runner-contract`, `inspection-report`,
-  `exit-codes`, and `license-verdict-cache`.
-- `npm test`: 6 Rust tests and 24 Chromium tests passed on the final tree.
-- `npm run lint`: TypeScript, rustfmt, and Clippy passed with warnings denied.
-- `npm run build`: release CLI and `dist/site/` passed.
-- `cargo package --locked`: 15 files, 53.1 KiB; package verification passed.
-- Site budget: 6.98 KiB gzip JavaScript and 3.78 KiB gzip CSS.
-- `/opt/fleet/lib/verify-url.sh`: HTTPS 200, title/lang/main/alt/control checks
-  passed with no console errors. See [verify.json](qa-evidence/polish-2/verify.json).
-- Cold production check: `/`, `/demo`, `/team`, `/privacy`, and `/terms`
-  returned 200; `/missing-place` returned a styled 404. Raw title, canonical,
-  Open Graph, Twitter, CSP, and nosniff checks passed for every route. SPA
-  navigation and Back focused the new `h1`. See
-  [live-route-check.json](qa-evidence/polish-2/live-route-check.json).
-- The cold `?demo=1` path showed the sample banner, all sample facts, Reset,
-  and View install command. Reset left no `demo:` keys, and every request stayed
-  on the product origin. See
-  [live-demo-mobile-390.png](qa-evidence/polish-2/live-demo-mobile-390.png).
-- At 390 × 844, the action and all three facts fit before the fold with no
-  horizontal overflow. See
-  [live-landing-mobile-390.png](qa-evidence/polish-2/live-landing-mobile-390.png).
-- Axe found zero serious or critical violations on all six checked routes.
-  Lighthouse mobile scored 100 Performance, 100 Accessibility, 100 Best
-  Practices, and 100 SEO; LCP was 1.5 s, CLS 0, and TBT 10 ms. See
-  [lighthouse-mobile.json](qa-evidence/polish-2/lighthouse-mobile.json).
+- Cold live checks at 390 × 844 and 1440 × 900.
+- One-click browser demo, Reset isolation, real-key preservation, and
+  same-origin request logging.
+- CLI demo from a temporary caller directory.
+- All 16 `.factory/claims.json` commands separately from clean clone
+  `/tmp/cifail-review3-claims-wi6n7Q`; all declared tests passed.
+- `npm test`: 6 Rust tests and 24 Chromium tests passed.
+- `npm run lint`: passed.
+- `npm run build`: passed and produced `dist/site/`.
+- Live route, raw metadata, link, 404, focus, axe, and URL-verifier checks.
+- Every earlier review and polish finding rechecked against live behavior and
+  current source/tests.
+- Adversarial wrapper fixture rerun with the clean-clone binary; it returned
+  `ready: true`, `commands_blocked: 0`, `network_hosts: []`, and retained
+  `env npm publish` in `run.sh`.
 
-## Run and verify
+## Remaining work
 
-```sh
-npm ci
-npm test
-npm run lint
-npm run build
-cargo package --locked
-node scripts/verify-live.mjs \
-  https://ci-provider-failover-drill.sociobot.in \
-  .factory/qa-evidence/polish-2
-```
-
-## Known gaps and next steps
-
-None for the reviewed scope. Registry publication remains a factory handoff
-step; this work order correctly did not publish the Rust package.
+Implement wrapper-aware release and network classification and add the exact
+counterexample to `@claim:release-safety` and `@claim:inspection-report`.
+Address F-3-3 through F-3-6, then rerun the full review from a clean clone.
