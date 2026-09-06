@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { execFileSync } from "node:child_process";
-import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -25,12 +25,20 @@ test("@claim:packet-generation creates a portable five-file packet", () => {
   expect(readFileSync(join(output, "Dockerfile"), "utf8")).toContain(`FROM ${image}`);
 });
 
-test("@claim:runner-contract writes a Docker runner contract for the selected image", () => {
-  const { output } = runPacket();
-  expect(readFileSync(join(output, "Dockerfile"), "utf8")).toContain(`FROM ${image}`);
-  const report = readFileSync(join(output, "report.md"), "utf8");
-  expect(report).toContain("Any runner needs Docker");
-  expect(report).toContain("checkout mounted at `/workspace`");
+test("@claim:runner-contract executes a no-secret packet with Docker", () => {
+  test.skip(!process.env.CIFAIL_DOCKER_RUNTIME, "Set CIFAIL_DOCKER_RUNTIME=1 with a usable Docker daemon to run the Docker contract.");
+  const root = mkdtempSync(join(tmpdir(), "cifail-runner-contract-"));
+  const repo = join(root, "repo");
+  mkdirSync(repo, { recursive: true });
+  writeFileSync(join(repo, "package.json"), JSON.stringify({ name: "runner-contract", version: "1.0.0", scripts: { test: "node -e \"console.log('runner contract passed')\"" } }));
+  const workflow = join(repo, "workflow.yml");
+  writeFileSync(workflow, "jobs:\n  smoke:\n    runs-on: ubuntu-latest\n    steps:\n      - name: Prove the packet runs\n        run: npm test\n");
+  const output = join(root, "packet");
+  execFileSync(binary, ["drill", "--workflow", workflow, "--job", "smoke", "--image", image, "--repo", repo, "--out", output, "--execute"], { encoding: "utf8" });
+  const report = JSON.parse(readFileSync(join(output, "drill.json"), "utf8"));
+  expect(report.executed).toBe(true);
+  expect(report.execution_passed).toBe(true);
+  expect(readFileSync(join(output, "report.md"), "utf8")).toContain("**Status: PASS**");
 });
 
 test("@claim:inspection-report records required files, network hosts, and provider actions", () => {
@@ -53,7 +61,9 @@ test("@claim:inspection-report records required files, network hosts, and provid
     "time npm publish",
     "timeout 30 npm publish",
     "sh -c 'npm publish'",
-    "bash -lc 'npm publish'"
+    "bash -lc 'npm publish'",
+    "echo `npm publish`",
+    "echo $(npm publish)"
   ]) {
     const variant = mkdtempSync(join(tmpdir(), "cifail-network-form-"));
     cpSync(sample, join(variant, "repo"), { recursive: true });
@@ -99,7 +109,10 @@ test("@claim:release-safety blocks publish commands by default", () => {
     "bash -c 'env npm publish'",
     "bash -lc 'env npm publish'",
     "dash -ec 'npm publish'",
-    "eval 'npm publish'"
+    "eval 'npm publish'",
+    "echo `npm publish`",
+    "echo $(npm publish)",
+    "RELEASE_TOOL='npm publish'; $RELEASE_TOOL"
   ]) {
     const root = mkdtempSync(join(tmpdir(), "cifail-release-form-"));
     cpSync(sample, join(root, "repo"), { recursive: true });
@@ -124,11 +137,19 @@ test("@claim:release-safety blocks publish commands by default", () => {
 });
 
 test("@claim:secret-redaction removes secret names and values", () => {
-  const { output, report } = runPacket();
-  const files = ["run.sh", ".env.example", "drill.json", "report.md"].map((file) => readFileSync(join(output, file), "utf8")).join("\n");
+  const root = mkdtempSync(join(tmpdir(), "cifail-secret-redaction-"));
+  const repo = join(root, "repo");
+  cpSync(sample, repo, { recursive: true });
+  const workflow = join(repo, ".github/workflows/release.yml");
+  writeFileSync(workflow, readFileSync(workflow, "utf8").replace("NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}", "NPM_TOKEN: ${{ secrets.NPM_TOKEN }}").replace("run: npm whoami", "run: test \"$NPM_TOKEN\" = \"$DRILL_ENV_1\""));
+  const output = join(root, "packet");
+  const stdout = execFileSync(binary, ["drill", "--workflow", workflow, "--job", "release-check", "--image", image, "--repo", repo, "--out", output, "--json"], { encoding: "utf8" });
+  const report = JSON.parse(stdout);
+  const files = ["Dockerfile", "run.sh", ".env.example", "drill.json", "report.md"].map((file) => readFileSync(join(output, file), "utf8")).join("\n");
   expect(report.secret_inputs).toBe(1);
   expect(files).not.toContain("NPM_TOKEN");
   expect(files).toContain("DRILL_SECRET_1");
+  expect(files).toContain("DRILL_ENV_1");
 });
 
 test("@claim:offline-generation analyzes local files without network", () => {
@@ -155,11 +176,21 @@ test("@claim:local-privacy makes no connection attempts while generating or runn
   expect(existsSync(join(root, "demo/failover-packet/report.md"))).toBe(true);
 });
 
-test("@claim:cli-demo-isolation keeps the caller directory unchanged and matches the browser sample", () => {
+test("@claim:cli-demo-isolation keeps the caller directory unchanged and uses the embedded sample", () => {
   const caller = mkdtempSync(join(tmpdir(), "cifail-demo-caller-"));
+  const artifactRoot = mkdtempSync(join(tmpdir(), "cifail-installed-artifact-"));
   writeFileSync(join(caller, "sentinel.txt"), "unchanged");
   const before = readdirSync(caller);
-  const stdout = execFileSync("cargo", ["run", "--quiet", "--locked", "--manifest-path", join(process.cwd(), "Cargo.toml"), "--", "demo", "--json"], { encoding: "utf8", cwd: caller });
+  const installed = join(artifactRoot, "cifail-installed");
+  copyFileSync(binary, installed);
+  const hiddenSample = join(artifactRoot, "source-sample-hidden");
+  renameSync(sample, hiddenSample);
+  let stdout = "";
+  try {
+    stdout = execFileSync(installed, ["demo", "--json"], { encoding: "utf8", cwd: caller });
+  } finally {
+    renameSync(hiddenSample, sample);
+  }
   const report = JSON.parse(stdout);
   expect(readdirSync(caller)).toEqual(before);
   expect(report.job).toBe("release-check");
@@ -167,6 +198,19 @@ test("@claim:cli-demo-isolation keeps the caller directory unchanged and matches
   expect(report.commands_blocked).toBe(1);
   expect(report.network_hosts).toContain("registry.npmjs.org");
   expect(existsSync(join(report.packet_path, "report.md"))).toBe(true);
+});
+
+test("translated steps reset the working directory and step environment", () => {
+  const root = mkdtempSync(join(tmpdir(), "cifail-step-isolation-"));
+  const repo = join(root, "repo");
+  mkdirSync(join(repo, "src"), { recursive: true });
+  writeFileSync(join(repo, "workflow.yml"), "jobs:\n  isolation:\n    runs-on: ubuntu-latest\n    steps:\n      - name: First step\n        working-directory: src\n        env:\n          STEP_ONLY: first\n        run: |\n          test \"$PWD\" = /workspace/src\n          test \"$STEP_ONLY\" = first\n      - name: Second step\n        run: |\n          test \"$PWD\" = /workspace\n          test -z \"${STEP_ONLY:-}\"\n");
+  const output = join(root, "packet");
+  execFileSync(binary, ["drill", "--workflow", join(repo, "workflow.yml"), "--job", "isolation", "--image", image, "--repo", repo, "--out", output]);
+  const localScript = readFileSync(join(output, "run.sh"), "utf8").replaceAll("/workspace", repo);
+  const scriptPath = join(root, "run-local.sh");
+  writeFileSync(scriptPath, localScript);
+  execFileSync("sh", [scriptPath]);
 });
 
 test("public CLI and demo copy use the documented terms", () => {
@@ -215,6 +259,13 @@ test("@claim:demo-sandbox opens sample data without reading or changing real bro
   await expect(page.getByText("Demo — sample data, nothing is saved", { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "The sample packet is ready to inspect." })).toBeVisible();
   await expect(page.getByText("3 included", { exact: true })).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  const banner = await page.locator(".demo-banner").boundingBox();
+  const reset = await page.getByRole("button", { name: "Reset demo" }).boundingBox();
+  const exit = await page.getByRole("button", { name: "View install command" }).boundingBox();
+  expect(banner && banner.y >= 0 && banner.y < 720).toBe(true);
+  expect(reset && reset.y >= 0 && reset.y < 720).toBe(true);
+  expect(exit && exit.y >= 0 && exit.y < 720).toBe(true);
   await page.evaluate(() => {
     localStorage.setItem("demo:test", "remove-me");
     localStorage.setItem("cifail:real-test", "keep-me");
@@ -289,6 +340,28 @@ test("replacing an invalid license token always verifies the replacement", async
   await page.getByRole("button", { name: "Verify license" }).click();
   await expect(page.getByRole("heading", { name: "Local organization log" })).toBeVisible();
   expect(requests).toEqual(["bad-token", "replacement-token"]);
+});
+
+test("a license throttle preserves the token and retries after Retry-After", async ({ page }) => {
+  let requests = 0;
+  await page.route("https://api.sociobot.in/**", async (route) => {
+    requests += 1;
+    if (requests === 1) {
+      await route.fulfill({ status: 429, headers: { "retry-after": "1", "access-control-expose-headers": "Retry-After" }, contentType: "application/json", body: JSON.stringify({ error: "too many requests" }) });
+      return;
+    }
+    await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ valid: true, reason: "ok" }) });
+  });
+  await page.goto("/team?license=throttled-token");
+  await expect(page.getByText("License checks are busy. Try again in 1 second.")).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("sb_license:ci-provider-failover-drill"))).toBe("throttled-token");
+  await page.getByLabel("License token").fill("throttled-token");
+  await page.getByRole("button", { name: "Verify license" }).click();
+  expect(requests).toBe(1);
+  await page.waitForTimeout(1_100);
+  await page.getByRole("button", { name: "Verify license" }).click();
+  await expect(page.getByRole("heading", { name: "Local organization log" })).toBeVisible();
+  expect(requests).toBe(2);
 });
 
 test("@claim:team-history exports, clears, imports, and restores local drill history", async ({ page }) => {

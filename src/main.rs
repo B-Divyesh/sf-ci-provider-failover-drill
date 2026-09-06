@@ -2,10 +2,15 @@ use anyhow::Result;
 use cifail::{DrillOptions, failure_exit_code, generate};
 use clap::{Parser, Subcommand};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 const SAMPLE_IMAGE: &str =
     "node:22-bookworm@sha256:8a34c4ab3ea2c5cd194f07e317b2a8f09461d3c8b05c4e34c8ccd56d56024c4d";
+const SAMPLE_WORKFLOW: &str = include_str!("../examples/sample-repo/.github/workflows/release.yml");
+const SAMPLE_PACKAGE: &str = include_str!("../examples/sample-repo/package.json");
+const SAMPLE_LOCKFILE: &str = include_str!("../examples/sample-repo/package-lock.json");
+const SAMPLE_CHECK: &str = include_str!("../examples/sample-repo/src/check.js");
+const SAMPLE_TEST: &str = include_str!("../examples/sample-repo/test/check.test.js");
 
 #[derive(Parser)]
 #[command(name = "cifail", version, about = "Prove one GitHub Actions job can run on another runner.", long_about = None)]
@@ -54,16 +59,20 @@ enum Commands {
     },
 }
 
-fn copy_tree(source: &Path, target: &Path) -> Result<()> {
-    fs::create_dir_all(target)?;
-    for entry in fs::read_dir(source)? {
-        let entry = entry?;
-        let destination = target.join(entry.file_name());
-        if entry.file_type()?.is_dir() {
-            copy_tree(&entry.path(), &destination)?;
-        } else {
-            fs::copy(entry.path(), destination)?;
-        }
+fn write_bundled_sample(target: &std::path::Path) -> Result<()> {
+    for (relative, contents) in [
+        (".github/workflows/release.yml", SAMPLE_WORKFLOW),
+        ("package.json", SAMPLE_PACKAGE),
+        ("package-lock.json", SAMPLE_LOCKFILE),
+        ("src/check.js", SAMPLE_CHECK),
+        ("test/check.test.js", SAMPLE_TEST),
+    ] {
+        let destination = target.join(relative);
+        let parent = destination
+            .parent()
+            .expect("bundled sample files have a parent directory");
+        fs::create_dir_all(parent)?;
+        fs::write(destination, contents)?;
     }
     Ok(())
 }
@@ -112,10 +121,7 @@ fn run() -> Result<()> {
                 (path, None::<tempfile::TempDir>)
             };
             let sample = sandbox.join("sample-repo");
-            copy_tree(
-                &PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("examples/sample-repo"),
-                &sample,
-            )?;
+            write_bundled_sample(&sample)?;
             let report = generate(&DrillOptions {
                 workflow: sample.join(".github/workflows/release.yml"),
                 job: "release-check".into(),

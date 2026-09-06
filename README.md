@@ -85,6 +85,13 @@ npm run build
 `dist/site/`. The factory deploys that directory as a static site. `cargo
 package --allow-dirty` verifies the Rust package can be published.
 
+Use `npm test` for normal checks. Run the Docker packet check on a machine with
+a usable Docker daemon:
+
+```sh
+CIFAIL_DOCKER_RUNTIME=1 npm run test:claims -- --grep @claim:runner-contract
+```
+
 ## Privacy and pricing
 
 The free CLI has no telemetry and makes no product requests. Inputs and drill

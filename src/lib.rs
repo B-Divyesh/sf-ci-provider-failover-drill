@@ -321,6 +321,89 @@ fn unknown_wrapper() -> CommandFacts {
     }
 }
 
+/// Find command substitutions without evaluating them. Every substitution is
+/// inspected with the same command model as the surrounding shell source so a
+/// release command cannot hide in an argument such as `echo \`npm publish\``.
+/// An incomplete substitution is unsafe because a shell could interpret the
+/// rest of the line differently, so it fails closed.
+fn substitution_facts(source: &str, depth: usize) -> CommandFacts {
+    if depth > 8 {
+        return unknown_wrapper();
+    }
+
+    let bytes = source.as_bytes();
+    let mut index = 0;
+    let mut facts = CommandFacts::default();
+    while index < bytes.len() {
+        if bytes[index] == b'\\' {
+            index += 2;
+            continue;
+        }
+        if bytes[index] == b'`' {
+            let start = index + 1;
+            index = start;
+            while index < bytes.len() && bytes[index] != b'`' {
+                if bytes[index] == b'\\' {
+                    index += 2;
+                } else {
+                    index += 1;
+                }
+            }
+            if index >= bytes.len() {
+                return unknown_wrapper();
+            }
+            facts.merge(command_facts_at_depth(&source[start..index], depth + 1));
+            index += 1;
+            continue;
+        }
+        if bytes[index] == b'$' && bytes.get(index + 1) == Some(&b'(') {
+            let start = index + 2;
+            let mut cursor = start;
+            let mut nesting = 1;
+            let mut quote = None;
+            while cursor < bytes.len() {
+                let byte = bytes[cursor];
+                if byte == b'\\' {
+                    cursor += 2;
+                    continue;
+                }
+                if let Some(active_quote) = quote {
+                    if byte == active_quote {
+                        quote = None;
+                    }
+                    cursor += 1;
+                    continue;
+                }
+                if matches!(byte, b'\'' | b'\"') {
+                    quote = Some(byte);
+                    cursor += 1;
+                    continue;
+                }
+                if byte == b'$' && bytes.get(cursor + 1) == Some(&b'(') {
+                    nesting += 1;
+                    cursor += 2;
+                    continue;
+                }
+                if byte == b')' {
+                    nesting -= 1;
+                    if nesting == 0 {
+                        break;
+                    }
+                }
+                cursor += 1;
+            }
+            if cursor >= bytes.len() || nesting != 0 || quote.is_some() {
+                return unknown_wrapper();
+            }
+            facts.merge(command_facts_at_depth(&source[start..cursor], depth + 1));
+            index = cursor + 1;
+            continue;
+        }
+        index += 1;
+    }
+    facts
+}
+
 fn wrapped_target<'a>(words: &'a [String], wrapper: &str) -> Result<&'a [String], ()> {
     let mut index = 1;
     while index < words.len() && is_assignment(&words[index]) {
@@ -675,10 +758,13 @@ fn facts_for_words(words: &[String], depth: usize) -> CommandFacts {
 }
 
 fn command_facts_at_depth(command: &str, depth: usize) -> CommandFacts {
+    if depth > 8 {
+        return unknown_wrapper();
+    }
     let Some(commands) = shell_commands(command) else {
         return unknown_wrapper();
     };
-    let mut facts = CommandFacts::default();
+    let mut facts = substitution_facts(command, depth);
     for words in commands {
         facts.merge(facts_for_words(&words, depth));
     }
@@ -786,6 +872,64 @@ fn redact_expressions(
     result
 }
 
+fn replace_identifier(input: &str, identifier: &str, replacement: &str) -> String {
+    let bytes = input.as_bytes();
+    let needle = identifier.as_bytes();
+    let is_identifier_byte = |byte: u8| byte == b'_' || byte.is_ascii_alphanumeric();
+    let mut result = String::with_capacity(input.len());
+    let mut copied_until = 0;
+    let mut index = 0;
+
+    while index + needle.len() <= bytes.len() {
+        let starts_here = &bytes[index..index + needle.len()] == needle;
+        let left_boundary = index == 0 || !is_identifier_byte(bytes[index - 1]);
+        let right = index + needle.len();
+        let right_boundary = right == bytes.len() || !is_identifier_byte(bytes[right]);
+        if starts_here && left_boundary && right_boundary {
+            result.push_str(&input[copied_until..index]);
+            result.push_str(replacement);
+            index = right;
+            copied_until = index;
+        } else {
+            index += 1;
+        }
+    }
+    result.push_str(&input[copied_until..]);
+    result
+}
+
+fn anonymous_environment_names(
+    job: &Job,
+    secret_map: &BTreeMap<String, String>,
+) -> BTreeMap<String, String> {
+    let mut names = BTreeSet::new();
+    for key in job.env.keys() {
+        if secret_map.contains_key(key) {
+            names.insert(key.clone());
+        }
+    }
+    for step in &job.steps {
+        for key in step.env.keys() {
+            if secret_map.contains_key(key) {
+                names.insert(key.clone());
+            }
+        }
+    }
+    names
+        .into_iter()
+        .enumerate()
+        .map(|(index, key)| (key, format!("DRILL_ENV_{}", index + 1)))
+        .collect()
+}
+
+fn anonymize_environment_names(input: &str, names: &BTreeMap<String, String>) -> String {
+    names
+        .iter()
+        .fold(input.to_string(), |value, (name, replacement)| {
+            replace_identifier(&value, name, replacement)
+        })
+}
+
 pub fn generate(options: &DrillOptions) -> Result<DrillReport> {
     if !is_pinned_image(&options.image) {
         return Err(DrillFailure::input(
@@ -836,6 +980,26 @@ pub fn generate(options: &DrillOptions) -> Result<DrillReport> {
     let mut commands = Vec::new();
     let mut blocked = Vec::new();
 
+    // Discover every GitHub secret before writing any environment export. This
+    // lets us anonymize a workflow environment key when it happens to be the
+    // same string as a secret identifier (for example NPM_TOKEN).
+    for value in job.env.values() {
+        if let Some(value) = yaml_string(value) {
+            let _ = redact_expressions(&value, &mut secret_map, &mut warnings);
+        }
+    }
+    for step in &job.steps {
+        for value in step.env.values() {
+            if let Some(value) = yaml_string(value) {
+                let _ = redact_expressions(&value, &mut secret_map, &mut warnings);
+            }
+        }
+        if let Some(run) = &step.run {
+            let _ = redact_expressions(run, &mut secret_map, &mut warnings);
+        }
+    }
+    let anonymous_env = anonymous_environment_names(job, &secret_map);
+
     if job.runs_on.is_none() {
         warnings.insert("The selected job has no runs-on value".into());
     }
@@ -853,6 +1017,7 @@ pub fn generate(options: &DrillOptions) -> Result<DrillReport> {
     for (key, value) in &job.env {
         if let Some(value) = yaml_string(value) {
             let value = redact_expressions(&value, &mut secret_map, &mut warnings);
+            let key = anonymous_env.get(key).unwrap_or(key);
             commands.push(format!("export {}={}", key, shell_env_value(&value)));
         }
     }
@@ -866,32 +1031,41 @@ pub fn generate(options: &DrillOptions) -> Result<DrillReport> {
             .name
             .clone()
             .unwrap_or_else(|| format!("Step {}", index + 1));
-        let mut command = redact_expressions(run, &mut secret_map, &mut warnings);
+        let command = anonymize_environment_names(
+            &redact_expressions(run, &mut secret_map, &mut warnings),
+            &anonymous_env,
+        );
         for file in infer_files(&command) {
             required_files.insert(file.to_string());
         }
         network_hosts.extend(infer_hosts(&command));
         if let Some(dir) = &step.working_directory {
             required_files.insert(format!("{dir}/"));
-            command = format!("cd {}\n{}", shell_quote(dir), command);
         }
         let mut exports = Vec::new();
         for (key, value) in &step.env {
             if let Some(value) = yaml_string(value) {
                 let value = redact_expressions(&value, &mut secret_map, &mut warnings);
+                let key = anonymous_env.get(key).unwrap_or(key);
                 exports.push(format!("export {}={}", key, shell_env_value(&value)));
             }
-        }
-        if !exports.is_empty() {
-            command = format!("{}\n{}", exports.join("\n"), command);
         }
         if command_facts(&command).release && !options.allow_release {
             blocked.push(name);
         } else {
+            let mut step_body = vec!["cd /workspace".to_string()];
+            step_body.extend(exports);
+            if let Some(dir) = &step.working_directory {
+                step_body.push(format!(
+                    "cd {}",
+                    shell_quote(&anonymize_environment_names(dir, &anonymous_env))
+                ));
+            }
+            step_body.push(command);
             commands.push(format!(
-                "printf '\\n→ %s\\n' {}\n{}",
+                "printf '\\n→ %s\\n' {}\n(\n{}\n)",
                 shell_quote(&name),
-                command
+                step_body.join("\n")
             ));
         }
     }

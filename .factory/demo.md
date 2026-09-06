@@ -25,7 +25,8 @@ Run:
 cargo run -- demo
 ```
 
-The same sample lives in `examples/sample-repo/`. The command copies it to a
-new `cifail-demo-*` temporary directory, generates the packet there, and prints
-that path. Pass `--out <path>` for a stable verification path. It never reads
-or writes the caller's repository.
+The same sample lives in `examples/sample-repo/` and is embedded in the binary
+at compile time. The command writes it to a new `cifail-demo-*` temporary
+directory, generates the packet there, and prints that path. Pass `--out
+<path>` for a stable verification path. It never reads or writes the caller's
+repository.

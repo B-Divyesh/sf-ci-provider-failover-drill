@@ -80,6 +80,8 @@ shorter term elsewhere. The preview label is “Sample drill result.”
 | `npm run build` compiles the release binary and writes the static site to `dist/site/`. | 14 | — |
 | The factory deploys that directory as a static site. | 9 | — |
 | `cargo package --allow-dirty` verifies the Rust package can be published. | 10 | — |
+| Use `npm test` for normal checks. | 6 | — |
+| Run the Docker packet check on a machine with a usable Docker daemon. | 13 | — |
 | The free CLI has no telemetry and makes no product requests. | 11 | — |
 | Inputs and drill packets stay on your machine. | 8 | — |
 | Docker or package commands may use the network only when you explicitly execute a packet. | 15 | — |

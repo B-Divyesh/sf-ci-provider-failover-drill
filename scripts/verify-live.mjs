@@ -100,6 +100,14 @@ for (const [route, title] of Object.entries(expected)) {
   check(await page.getByText("Demo — sample data, nothing is saved", { exact: true }).isVisible(), "query demo banner missing");
   check(await page.getByRole("heading", { name: "The sample packet is ready to inspect." }).isVisible(), "query demo result heading missing");
   check(await page.getByText("3 included", { exact: true }).isVisible(), "query demo sample missing");
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  const stickyBanner = await page.locator(".demo-banner").boundingBox();
+  const stickyControls = await page.locator(".demo-banner button").evaluateAll((nodes) => nodes.map((node) => {
+    const box = node.getBoundingClientRect();
+    return { label: node.textContent?.trim(), y: box.y, height: box.height };
+  }));
+  check(Boolean(stickyBanner && stickyBanner.y >= 0 && stickyBanner.y < 844), "query demo banner does not persist while scrolling");
+  check(stickyControls.every((item) => item.y >= 0 && item.y < 844), "query demo controls do not persist while scrolling");
   await page.getByRole("button", { name: "Reset demo" }).click();
   const demoKeys = await page.evaluate(() => Object.keys(localStorage).filter((key) => key.startsWith("demo:")));
   const realData = await page.evaluate(() => ({
@@ -115,7 +123,7 @@ for (const [route, title] of Object.entries(expected)) {
   check(controls.every((item) => item.width >= 44 && item.height >= 44), "query demo has a small touch target");
   check([...origins].every((origin) => origin === new URL(base).origin), "query demo contacted another origin");
   await page.screenshot({ path: resolve(evidence, "live-demo-mobile-390.png"), fullPage: true });
-  report.demo = { banner: true, sample: "3 included / 1 blocked / 1 anonymous", demoKeys, realDataPreserved: true, controls, requestOrigins: [...origins] };
+  report.demo = { banner: true, stickyBanner, stickyControls, sample: "3 included / 1 blocked / 1 anonymous", demoKeys, realDataPreserved: true, controls, requestOrigins: [...origins] };
   await context.close();
 }
 

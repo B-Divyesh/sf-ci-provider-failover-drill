@@ -4,10 +4,12 @@ const PRODUCT = "ci-provider-failover-drill";
 const API = "https://api.sociobot.in/api/v1";
 const LICENSE_KEY = `sb_license:${PRODUCT}`;
 const VERDICT_KEY = `sb_license_status:${PRODUCT}`;
+const RETRY_KEY = `sb_license_retry:${PRODUCT}`;
 const TEAM_DATA_KEY = "team:drills";
 
 type Page = { title: string; description: string; body: string; demo?: boolean };
 type Verdict = { valid: boolean; reason: string; checkedAt: number; token: string };
+type RetryWindow = { token: string; retryAt: number };
 
 const routeMeta: Record<string, [string, string]> = {
   "/": ["CI Provider Failover Drill — test one job", "Turn one GitHub Actions job into a provider-neutral container drill."],
@@ -465,7 +467,34 @@ function getCachedVerdict(token?: string): Verdict | null {
   } catch { return null; }
 }
 
+function getRetryWindow(token: string): RetryWindow | null {
+  try {
+    const window = JSON.parse(localStorage.getItem(RETRY_KEY) || "null") as RetryWindow | null;
+    return window && window.token === token && window.retryAt > Date.now() ? window : null;
+  } catch { return null; }
+}
+
+function retryDelay(response: Response): number {
+  const retryAfter = response.headers.get("Retry-After");
+  if (!retryAfter) return 60_000;
+  const seconds = Number(retryAfter);
+  if (Number.isFinite(seconds) && seconds >= 0) return Math.ceil(seconds * 1000);
+  const date = Date.parse(retryAfter);
+  return Number.isNaN(date) ? 60_000 : Math.max(0, date - Date.now());
+}
+
+function retryNotice(delay: number): string {
+  const seconds = Math.max(1, Math.ceil(delay / 1000));
+  return `License checks are busy. Try again in ${seconds} ${seconds === 1 ? "second" : "seconds"}.`;
+}
+
 async function verifyLicense(token: string, rerender = false, force = false): Promise<void> {
+  const retry = getRetryWindow(token);
+  if (retry) {
+    const notice = document.querySelector("#license-notice");
+    if (notice) notice.textContent = retryNotice(retry.retryAt - Date.now());
+    return;
+  }
   const cached = force ? null : getCachedVerdict(token);
   if (cached) {
     if (rerender) render();
@@ -473,8 +502,18 @@ async function verifyLicense(token: string, rerender = false, force = false): Pr
   }
   try {
     const response = await fetch(`${API}/products/${PRODUCT}/verify?license=${encodeURIComponent(token)}`);
+    if (response.status === 429) {
+      const delay = retryDelay(response);
+      localStorage.setItem(RETRY_KEY, JSON.stringify({ token, retryAt: Date.now() + delay }));
+      const notice = document.querySelector("#license-notice");
+      if (notice) notice.textContent = retryNotice(delay);
+      return;
+    }
+    if (!response.ok) throw new Error(`license verification returned ${response.status}`);
     const data = await response.json() as { valid: boolean; reason: string };
+    if (typeof data.valid !== "boolean") throw new Error("license verification returned no verdict");
     localStorage.setItem(VERDICT_KEY, JSON.stringify({ valid: data.valid, reason: data.reason, checkedAt: Date.now(), token }));
+    localStorage.removeItem(RETRY_KEY);
     if (!data.valid) localStorage.removeItem(LICENSE_KEY);
     if (rerender) {
       render();

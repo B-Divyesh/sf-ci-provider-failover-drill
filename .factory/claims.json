@@ -18,7 +18,7 @@
     "claim": "Secret names and values do not appear in generated packet files.",
     "where": "landing facts, demo, README, privacy",
     "test": "npm run test:claims -- --grep @claim:secret-redaction",
-    "sandbox": "bundled sample with secrets.NPM_TOKEN; scan every generated report file"
+    "sandbox": "fresh sample variants where the environment key matches secrets.NPM_TOKEN; scan every generated packet file"
   },
   {
     "id": "offline-generation",
@@ -39,7 +39,7 @@
     "claim": "The CLI demo uses the bundled sample and does not write to the caller repository.",
     "where": "README sample section, terminal recording",
     "test": "npm run test:claims -- --grep @claim:cli-demo-isolation",
-    "sandbox": "run the documented demo command from a temporary caller directory and compare its unchanged contents with the reported sample facts"
+    "sandbox": "run a copied installed binary after its build sample is removed, from a temporary caller directory; compare unchanged caller contents with reported sample facts"
   },
   {
     "id": "no-ci-mutation",
@@ -87,8 +87,8 @@
     "id": "runner-contract",
     "claim": "The generated packet can run on a laptop or any runner with Docker.",
     "where": "landing preview, README",
-    "test": "npm run test:claims -- --grep @claim:runner-contract",
-    "sandbox": "bundled sample in a temporary directory; inspect the Dockerfile and generic runner contract"
+    "test": "CIFAIL_DOCKER_RUNTIME=1 npm run test:claims -- --grep @claim:runner-contract",
+    "sandbox": "Docker-capable clean runner; generate and execute a no-secret Node smoke packet, then assert a PASS report"
   },
   {
     "id": "inspection-report",
