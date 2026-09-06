@@ -90,3 +90,17 @@ without spending or storing a real license.
 - Run the Docker runtime claim on a host whose kernel permits Docker container
   isolation. No product behavior is being claimed as passed from this worker
   for that final runtime execution.
+
+## Verification 4
+
+Verification 4 reviewed implementation `1c48c1eb05f3c3335fc5abac6f8223fb603ac564`
+against live deployment from documentation SHA
+`a37dc2074ea782b5a396b0f79cb0e1606eb5a5fa`. It is **FAIL** with one untested
+public claim: `runner-contract`. The verifier installed Docker 29.1.3 and
+started a private daemon; the declared real-Docker command reached the build
+but the worker kernel rejected isolation with `unshare: operation not
+permitted`. All other 15 declared claims, clean tests, lint, build, package,
+and consumer installation passed. Live phone and desktop demo, routes,
+accessibility, privacy, checkout redirect, rate limiting, and Lighthouse
+checks passed. See `.factory/verification-4.md` for exact evidence and the
+required Docker-capable-host command.
